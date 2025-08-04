@@ -10,6 +10,8 @@ import 'screens/home/main_page.dart';
 import 'screens/home/filter_page.dart';
 import 'screens/tickets/create_ticket_page.dart';
 import 'screens/tickets/create_ticket_continue_page.dart';
+import 'screens/clients/client_details_page.dart';
+import 'screens/chat/chat_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,10 +41,31 @@ class MyApp extends StatelessWidget {
         '/main/menu': (context) => const MainPage(initialIndex: 4),
         '/main/home': (context) => const MainPage(initialIndex: 0),
         '/main/tickets': (context) => const MainPage(initialIndex: 1),
+        '/main/clients': (context) => const MainPage(initialIndex: 3),
         '/main/home/filter': (context) => const FilterPage(),
         '/main/tickets/create': (context) => const CreateTicketPage(),
         '/main/tickets/create/continue': (context) =>
             const CreateTicketContinuePage(),
+        '/messages': (context) => const ChatPage(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name?.startsWith('/main/clients/details') == true) {
+          final args = settings.arguments as Map<String, dynamic>?;
+          if (args != null) {
+            return MaterialPageRoute(
+              builder: (context) => ClientDetailsPage(
+                clientId: args['clientId'] ?? '',
+                clientName: args['clientName'] ?? '',
+                joinDate: args['joinDate'] ?? '',
+                isActive: args['isActive'] ?? false,
+                ticketsInProgress: args['ticketsInProgress'] ?? 0,
+                ticketsResolved: args['ticketsResolved'] ?? 0,
+                avatar: args['avatar'] ?? '',
+              ),
+            );
+          }
+        }
+        return null;
       },
       debugShowCheckedModeBanner: false,
     );

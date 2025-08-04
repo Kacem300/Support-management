@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Menu/menu_screen.dart';
 import '../tickets/tickets_page.dart';
+import '../clients/clients_page.dart';
 import 'home_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -44,10 +45,7 @@ class _MainPageState extends State<MainPage> {
       case 2:
         Navigator.pushNamed(context, '/messages');
         break;
-      case 3:
-        Navigator.pushNamed(context, '/clients');
-        break;
-      // Home, Tickets, and Menu are handled by setState above
+      // Home, Tickets, Clients, and Menu are handled by setState above
     }
   }
 
@@ -57,21 +55,12 @@ class _MainPageState extends State<MainPage> {
         return const HomePage();
       case 1:
         return const TicketsPage();
+      case 3:
+        return const ClientsPage();
       case 4:
         return const MenuScreen();
       default:
-        return Container(
-          color: const Color(0xFFF5F5F5),
-          child: const Center(
-            child: Text(
-              'Page not implemented yet',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-        );
+        return const HomePage(); // Default to home page
     }
   }
 
@@ -228,44 +217,6 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
-
-  /* Widget _buildCenterIcon() {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Image.asset(
-        'assets/images/AfterCodeIcon.png',
-        width: 50,
-        height: 50,
-        fit: BoxFit.fill,
-        errorBuilder: (context, error, stackTrace) {
-          print('Error loading AfterCodeIcon.png: $error');
-          return Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
-              color: Color(0xFF4ECDC4),
-              shape: BoxShape.circle,
-            ),
-            /* child: const Center(
-              child: Text(
-                'A C',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ), 
-            ),*/
-          );
-        },
-      ),
-    );
-  } */
 
   IconData _getDefaultIcon(int index) {
     switch (index) {
