@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import '../Menu/menu_screen.dart';
-import '../tickets/tickets_page.dart';
-import '../clients/clients_page.dart';
-import 'home_page.dart';
+import '../menu/menu_view.dart';
+import '../tickets/tickets_views.dart';
+import '../clients/clients_views.dart';
+import 'home_view.dart';
 
-class MainPage extends StatefulWidget {
+class MainPageView extends StatefulWidget {
   final int initialIndex;
 
-  const MainPage({super.key, this.initialIndex = 0});
+  const MainPageView({super.key, this.initialIndex = 0});
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<MainPageView> createState() => _MainPageViewState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _MainPageViewState extends State<MainPageView> {
   late int _currentIndex;
 
   @override
@@ -52,15 +52,15 @@ class _MainPageState extends State<MainPage> {
   Widget _getCurrentPage() {
     switch (_currentIndex) {
       case 0:
-        return const HomePage();
+        return const HomeView();
       case 1:
-        return const TicketsPage();
+        return const TicketsView();
       case 3:
-        return const ClientsPage();
+        return const ClientsView();
       case 4:
-        return const MenuScreen();
+        return const MenuView(); // Ensure MenuView is displayed correctly
       default:
-        return const HomePage(); // Default to home page
+        return const HomeView(); // Default to home page
     }
   }
 
