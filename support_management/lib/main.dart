@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'controllers/controllers.dart';
 import 'constants/constants.dart';
-import 'package:support_management/views/notifications/notification_view.dart';
 
 // Views - New MVC Structure
 import 'views/splash/splash_view.dart';
@@ -15,12 +14,12 @@ import 'views/tickets/filter_view.dart' as tickets_filter;
 import 'views/tickets/create_ticket_view.dart';
 import 'views/tickets/create_ticket_continue_view.dart';
 import 'views/clients/clients_views.dart';
-import 'views/clients/client_details_view.dart';
 import 'views/clients/client_filter_view.dart';
 import 'views/common/common_views.dart' hide ChatView, FilterView;
 import 'views/main/main_navigation_view.dart';
 import 'views/chat/chat_view.dart';
 import 'views/audio/audio_recording_view.dart';
+import 'views/menu/notifications_settings_view.dart';
 
 // Legacy screens for backward compatibility
 import 'views/legacy/legacy_screens.dart';
@@ -84,8 +83,8 @@ class MyApp extends StatelessWidget {
           '/tickets': (context) => const TicketsView(),
           '/clients': (context) => const ClientsView(),
           '/menu': (context) => const MenuView(),
+          /*   '/main/clients/details': (context) => const ClientDetailsView(),*/
 
-          // Ticket management routes
           '/tickets/create': (context) => const CreateTicketView(),
           '/main/tickets/create': (context) =>
               const CreateTicketView(), // Make sure this is correct
@@ -119,45 +118,10 @@ class MyApp extends StatelessWidget {
           '/reset-password-legacy': (context) => const ResetPasswordScreen(),
 
           // Notification route
-          '/notifications': (context) => const NotificationView(),
+          '/notifications': (context) => const NotificationsSettingsView(),
         },
         onGenerateRoute: (settings) {
-          // Handle dynamic client details routes with full parameters
-          if (settings.name?.startsWith('/main/clients/details') == true) {
-            final args = settings.arguments as Map<String, dynamic>?;
-            if (args != null) {
-              // Use legacy ClientDetailsPage with all parameters for backward compatibility
-              return MaterialPageRoute(
-                builder: (context) => ClientDetailsPage(
-                  clientId: args['clientId'] ?? '',
-                  clientName: args['clientName'] ?? '',
-                  joinDate: args['joinDate'] ?? '',
-                  isActive: args['isActive'] ?? false,
-                  ticketsInProgress: args['ticketsInProgress'] ?? 0,
-                  ticketsResolved: args['ticketsResolved'] ?? 0,
-                  avatar: args['avatar'] ?? '',
-                ),
-              );
-            }
-          }
-
-          // Handle alternative client details route pattern
-          if (settings.name?.startsWith('/clients/details') == true) {
-            final args = settings.arguments as Map<String, dynamic>?;
-            if (args != null) {
-              return MaterialPageRoute(
-                builder: (context) => ClientDetailsView(
-                  clientId: args['clientId'] ?? '',
-                  clientName: args['clientName'] ?? 'Unknown Client',
-                  joinDate: args['joinDate'] ?? '',
-                  isActive: args['isActive'] ?? false,
-                  ticketsInProgress: args['ticketsInProgress'] ?? 0,
-                  ticketsResolved: args['ticketsResolved'] ?? 0,
-                  avatar: args['avatar'] ?? '',
-                ),
-              );
-            }
-          }
+          // Remove the client details route handling - let it be handled by normal navigation
 
           // Handle unknown routes - redirect to home
           return MaterialPageRoute(

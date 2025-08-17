@@ -11,10 +11,10 @@ class _CreateTicketViewState extends State<CreateTicketView> {
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
 
-  List<String> _selectedClients = [
+  final List<String> _selectedClients = [
     'Design'
   ]; // Changed to list for multiple selection
-  List<String> _selectedTicketTypes = [
+  final List<String> _selectedTicketTypes = [
     'Design'
   ]; // Changed to list for multiple selection
   String _selectedDuration = 'Sélectionner une Durée';
@@ -57,14 +57,14 @@ class _CreateTicketViewState extends State<CreateTicketView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.grey[100],
         elevation: 0,
         leading: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Colors.white,
             shape: BoxShape.circle, // Changed to circle shape
           ),
           child: IconButton(

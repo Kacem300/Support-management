@@ -81,6 +81,33 @@ class _FilterViewState extends State<FilterView> {
     );
   }
 
+  Widget _buildTypeSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Type de ticket',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            _buildTypeChip('Technique'),
+            _buildTypeChip('Facturation'),
+            _buildTypeChip('Support'),
+            _buildTypeChip('Demande d\'information'),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildPrioritySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,13 +154,14 @@ class _FilterViewState extends State<FilterView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.grey[100],
+          color: isSelected ? const Color(0xFFF6F6F6) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected ? Border.all(color: color, width: 1) : null,
+          border: Border.all(color: const Color(0xFFEAE7E7), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // keep icon color as provided
             Image.asset(
               iconPath,
               width: 16,
@@ -151,8 +179,12 @@ class _FilterViewState extends State<FilterView> {
             Text(
               priority,
               style: TextStyle(
-                color: isSelected ? color : Colors.black87,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: isSelected
+                    ? const Color(0xFF000000)
+                    : const Color(0xFF707070),
               ),
             ),
           ],
@@ -180,11 +212,13 @@ class _FilterViewState extends State<FilterView> {
           children: [
             _buildStatusChip('Nouveau', const Color(0xFF3498DB),
                 'assets/images/stickernouveau.png'),
+            _buildStatusChip('Ouvert', const Color(0xFF4ECDC4),
+                'assets/images/stickerOuvert.png'),
             _buildStatusChip('En cours', const Color(0xFFF39C12),
                 'assets/images/stickerEncour.png'),
-            _buildStatusChip('Résolu', const Color(0xFF4ECDC4),
+            _buildStatusChip('Résolu', const Color(0xFF049C6B),
                 'assets/images/StickerResolu.png'),
-            _buildStatusChip('Fermé', const Color(0xFFE74C3C),
+            _buildStatusChip('Rejeter', const Color(0xFFE74C3C),
                 'assets/images/StickerRejeter.png'),
           ],
         ),
@@ -205,25 +239,25 @@ class _FilterViewState extends State<FilterView> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.grey[100],
+          color: isSelected ? color.withOpacity(0.12) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected ? Border.all(color: color, width: 1) : null,
+          border: Border.all(color: const Color(0xFFEAE7E7), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
               iconPath,
-              width: 16,
-              height: 16,
-              color: color,
+              width: 20,
+              height: 20,
+              color: isSelected ? color : const Color(0xFF292D32),
               errorBuilder: (context, error, stackTrace) {
                 return Icon(
                   Icons.circle,
-                  size: 16,
-                  color: color,
+                  size: 20,
+                  color: isSelected ? color : const Color(0xFF292D32),
                 );
               },
             ),
@@ -231,40 +265,17 @@ class _FilterViewState extends State<FilterView> {
             Text(
               status,
               style: TextStyle(
-                color: isSelected ? color : Colors.black87,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+                color: isSelected
+                    ? const Color(0xFF000000)
+                    : const Color(0xFF464255),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildTypeSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Type de ticket',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 12,
-          runSpacing: 8,
-          children: [
-            _buildTypeChip('Technique'),
-            _buildTypeChip('Facturation'),
-            _buildTypeChip('Support'),
-            _buildTypeChip('Demande d\'information'),
-          ],
-        ),
-      ],
     );
   }
 
@@ -281,23 +292,43 @@ class _FilterViewState extends State<FilterView> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF4ECDC4).withOpacity(0.1)
-              : Colors.grey[100],
+          color: isSelected ? const Color(0xFFF6F6F6) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? const Border.fromBorderSide(
-                  BorderSide(color: Color(0xFF4ECDC4), width: 1))
-              : null,
+          border: Border.all(color: const Color(0xFFEAE7E7), width: 1),
         ),
-        child: Text(
-          type,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF4ECDC4) : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              type,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: isSelected
+                    ? const Color(0xFF101828)
+                    : const Color(0xFF707070),
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedTypes.remove(type);
+                  });
+                },
+                child: Image.asset(
+                  'assets/images/CancelFilled.png',
+                  width: 16,
+                  height: 16,
+                  fit: BoxFit.contain,
+                ),
+              )
+            ]
+          ],
         ),
       ),
     );
@@ -347,23 +378,42 @@ class _FilterViewState extends State<FilterView> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF4ECDC4).withOpacity(0.1)
-              : Colors.grey[100],
+          color: isSelected ? const Color(0xFFF6F6F6) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? const Border.fromBorderSide(
-                  BorderSide(color: Color(0xFF4ECDC4), width: 1))
-              : null,
+          border: Border.all(color: const Color(0xFFEAE7E7), width: 1),
         ),
-        child: Text(
-          createdBy,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF4ECDC4) : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              createdBy,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: isSelected
+                    ? const Color(0xFF101828)
+                    : const Color(0xFF707070),
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedCreatedBy.remove(createdBy);
+                  });
+                },
+                child: Image.asset(
+                  'assets/images/x.png',
+                  width: 16,
+                  height: 16,
+                ),
+              )
+            ]
+          ],
         ),
       ),
     );
@@ -410,23 +460,52 @@ class _FilterViewState extends State<FilterView> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF4ECDC4).withOpacity(0.1)
-              : Colors.grey[100],
+          color: isSelected ? const Color(0xFFF6F6F6) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? const Border.fromBorderSide(
-                  BorderSide(color: Color(0xFF4ECDC4), width: 1))
-              : null,
+          border: Border.all(color: const Color(0xFFEAE7E7), width: 1),
         ),
-        child: Text(
-          client,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF4ECDC4) : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // small avatar circle
+            CircleAvatar(
+              radius: 10,
+              backgroundColor: const Color(0xFF4ECDC4).withOpacity(0.2),
+              child: Text(
+                client.isNotEmpty ? client[0].toUpperCase() : '?',
+                style: const TextStyle(fontSize: 12, color: Colors.black),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              client,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: isSelected
+                    ? const Color(0xFF101828)
+                    : const Color(0xFF707070),
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedClients.remove(client);
+                  });
+                },
+                child: Image.asset(
+                  'assets/images/x.png',
+                  width: 16,
+                  height: 16,
+                ),
+              )
+            ]
+          ],
         ),
       ),
     );
@@ -472,23 +551,51 @@ class _FilterViewState extends State<FilterView> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF4ECDC4).withOpacity(0.1)
-              : Colors.grey[100],
+          color: isSelected ? const Color(0xFFF6F6F6) : const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(20),
-          border: isSelected
-              ? const Border.fromBorderSide(
-                  BorderSide(color: Color(0xFF4ECDC4), width: 1))
-              : null,
+          border: Border.all(color: const Color(0xFFEAE7E7), width: 1),
         ),
-        child: Text(
-          assignee,
-          style: TextStyle(
-            color: isSelected ? const Color(0xFF4ECDC4) : Colors.black87,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 10,
+              backgroundColor: const Color(0xFF4ECDC4).withOpacity(0.2),
+              child: Text(
+                assignee.isNotEmpty ? assignee[0].toUpperCase() : '?',
+                style: const TextStyle(fontSize: 12, color: Colors.black),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              assignee,
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+                color: isSelected
+                    ? const Color(0xFF101828)
+                    : const Color(0xFF707070),
+              ),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    selectedAssignees.remove(assignee);
+                  });
+                },
+                child: Image.asset(
+                  'assets/images/x.png',
+                  width: 16,
+                  height: 16,
+                ),
+              )
+            ]
+          ],
         ),
       ),
     );

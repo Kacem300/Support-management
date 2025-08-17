@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../models/models.dart';
 import '../services/services.dart';
 
@@ -39,7 +41,9 @@ class AuthController extends ChangeNotifier {
 
       final user = await _authService.login(email, password);
       _setUser(user);
-
+      if (user != null) {
+        await _saveUserToPrefs(user);
+      }
       return user != null;
     } catch (e) {
       _setError(e.toString());
@@ -74,6 +78,7 @@ class AuthController extends ChangeNotifier {
       final success = await _authService.logout();
       if (success) {
         _setUser(null);
+        await _removeUserFromPrefs();
       }
 
       return success;
@@ -129,6 +134,13 @@ class AuthController extends ChangeNotifier {
 
   Future<void> checkAuthStatus() async {
     try {
+      // Vérifier d'abord dans SharedPreferences
+      final user = await _loadUserFromPrefs();
+      if (user != null) {
+        _setUser(user);
+        return;
+      }
+      // Sinon, fallback sur l'ancien comportement
       final isLoggedIn = await _authService.isLoggedIn();
       if (isLoggedIn) {
         final user = await _authService.getCurrentUser();
@@ -137,6 +149,34 @@ class AuthController extends ChangeNotifier {
     } catch (e) {
       _setError(e.toString());
     }
+  }
+
+  // --- Persistance session utilisateur ---
+  static const String _userPrefsKey = 'user_data';
+
+  Future<void> _saveUserToPrefs(UserModel user) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = jsonEncode(user.toJson());
+    await prefs.setString(_userPrefsKey, userJson);
+  }
+
+  Future<UserModel?> _loadUserFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userJson = prefs.getString(_userPrefsKey);
+    if (userJson != null) {
+      try {
+        final map = jsonDecode(userJson);
+        return UserModel.fromJson(map);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _removeUserFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userPrefsKey);
   }
 
   void clearError() {

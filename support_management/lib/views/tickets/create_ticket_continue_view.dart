@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class CreateTicketContinueView extends StatefulWidget {
   const CreateTicketContinueView({super.key});
@@ -51,37 +52,133 @@ class _CreateTicketContinueViewState extends State<CreateTicketContinueView> {
 
               // Attachments Section
               _buildLabel('Attachements'),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Upload Area
+              // Upload Area (Figma style)
               GestureDetector(
                 onTap: () => _pickImageFromGallery(),
-                child: _buildUploadArea(),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4ECDC4),
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                        child: const Icon(
+                          Icons.cloud_upload_outlined,
+                          color: Color(0xFF1ABC9C),
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Upload a cover image for your product.',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text.rich(
+                        TextSpan(
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[500],
+                          ),
+                          children: const [
+                            TextSpan(text: 'File Format '),
+                            TextSpan(
+                              text: 'jpeg, png ',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            TextSpan(text: 'Recommened Size '),
+                            TextSpan(
+                              text: '600x600 (1:1)',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-              // Upload buttons
+              // Upload buttons (Figma style)
               Row(
                 children: [
                   Expanded(
-                    child: _buildUploadButton(
-                      icon: Icons.file_upload_outlined,
-                      text: 'Upload Image',
-                      onTap: () => _pickImageFromGallery(),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.file_upload_outlined,
+                          color: Color(0xFF232B55)),
+                      label: const Text(
+                        'Upload Image',
+                        style: TextStyle(
+                          color: Color(0xFF232B55),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.white,
+                        elevation: 0,
+                      ),
+                      onPressed: () => _pickImageFromGallery(),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: _buildUploadButton(
-                      icon: Icons.photo_library_outlined,
-                      text: 'Gallery',
-                      onTap: () => _pickImageFromGallery(),
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.camera_alt_outlined,
+                          color: Color(0xFF232B55)),
+                      label: const Text(
+                        'Camera',
+                        style: TextStyle(
+                          color: Color(0xFF232B55),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE5E7EB)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.white,
+                        elevation: 0,
+                      ),
+                      onPressed: _pickImageFromCamera,
                     ),
                   ),
                 ],
               ),
-
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
               // Attached files list
               if (_attachedFiles.isNotEmpty) ...[
@@ -137,217 +234,145 @@ class _CreateTicketContinueViewState extends State<CreateTicketContinueView> {
     );
   }
 
-  Widget _buildUploadArea() {
+  Widget _buildFileItem(Map<String, dynamic> file, int index) {
     return Container(
-      width: double.infinity,
-      height: 160,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border.all(
-          color: Colors.grey[300]!,
-          style: BorderStyle.solid,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFF4ECDC4),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: const Icon(
-              Icons.file_upload_outlined,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Upload a cover image for your product.',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          RichText(
-            text: TextSpan(
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-              children: const [
-                TextSpan(text: 'File Format '),
-                TextSpan(
-                  text: 'jpeg, png ',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                TextSpan(text: 'Recommended Size '),
-                TextSpan(
-                  text: '600x600\n(1:1)',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            textAlign: TextAlign.center,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.04),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildUploadButton({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 50,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: Colors.grey[600],
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFileItem(Map<String, dynamic> file, int index) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // File icon or image preview
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: file['path'] != null &&
-                    file['type'] == 'image' &&
-                    file['isMock'] != true
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      File(file['path']),
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          _getFileIcon(file['type']),
-                          color: Colors.white,
-                          size: 20,
-                        );
-                      },
-                    ),
-                  )
-                : Icon(
-                    _getFileIcon(file['type']),
-                    color: Colors.white,
-                    size: 20,
-                  ),
-          ),
-          const SizedBox(width: 12),
-
-          // File info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  file['name'] ?? 'image.jpg',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  file['size'] ?? '2.1 MB',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Action buttons
           Row(
             children: [
-              GestureDetector(
-                onTap: () => _previewImage(file),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(
-                    Icons.visibility,
-                    color: Colors.grey[600],
-                    size: 16,
-                  ),
+              // File icon or image preview (rounded)
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: file['path'] != null &&
+                        file['type'] == 'image' &&
+                        file['isMock'] != true
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          File(file['path']),
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              _getFileIcon(file['type']),
+                              color: Colors.white,
+                              size: 24,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        _getFileIcon(file['type']),
+                        color: Colors.white,
+                        size: 24,
+                      ),
+              ),
+              const SizedBox(width: 14),
+
+              // File info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      file['name'] ?? 'image.jpg',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF232B55),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      file['size'] ?? '2.1 MB',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF8A8A8A),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: () => _removeFile(index),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(6),
+
+              // Action buttons (pause and delete)
+              Row(
+                children: [
+                  // Pause button (disabled for mock)
+                  Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundColor: const Color(0xFFF5F6FA),
+                      child: IconButton(
+                        icon: const Icon(Icons.pause,
+                            color: Color(0xFFB0B3C7), size: 18),
+                        onPressed: null,
+                        padding: EdgeInsets.zero,
+                        splashRadius: 18,
+                      ),
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.close,
-                    color: Colors.red,
-                    size: 16,
+                  // Delete button
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: const Color(0xFFFFF0F0),
+                    child: IconButton(
+                      icon: const Icon(Icons.close,
+                          color: Color(0xFFFF4D4F), size: 18),
+                      onPressed: () => _removeFile(index),
+                      padding: EdgeInsets.zero,
+                      splashRadius: 18,
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
+          ),
+          // Progress bar (Figma style, always at 0 for mock)
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Color(0xFFF5F6FA),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: 0.0, // Always 0 for mock
+                child: Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Color(0xFF4ECDC4),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -356,36 +381,61 @@ class _CreateTicketContinueViewState extends State<CreateTicketContinueView> {
 
   Future<void> _pickImageFromGallery() async {
     try {
-      // Mock implementation - add a sample file
-      await _addMockFile();
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        final file = File(pickedFile.path);
+        setState(() {
+          _attachedFiles.add({
+            'name': pickedFile.name,
+            'size':
+                '${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB',
+            'type': 'image',
+            'path': pickedFile.path,
+            'file': file,
+            'isMock': false,
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image ajoutée depuis la galerie!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       _showErrorSnackBar('Erreur lors de la sélection de l\'image: $e');
     }
   }
 
-  Future<void> _addMockFile() async {
+  Future<void> _pickImageFromCamera() async {
     try {
-      // Create a mock file entry
-      setState(() {
-        _attachedFiles.add({
-          'name': 'sample_image_${_attachedFiles.length + 1}.jpg',
-          'size':
-              '${(2.0 + _attachedFiles.length * 0.5).toStringAsFixed(1)} MB',
-          'type': 'image',
-          'path': null, // No real file path for mock
-          'file': null, // No real file for mock
-          'isMock': true,
+      final ImagePicker picker = ImagePicker();
+      final XFile? pickedFile =
+          await picker.pickImage(source: ImageSource.camera);
+      if (pickedFile != null) {
+        final file = File(pickedFile.path);
+        setState(() {
+          _attachedFiles.add({
+            'name': pickedFile.name,
+            'size':
+                '${(file.lengthSync() / (1024 * 1024)).toStringAsFixed(1)} MB',
+            'type': 'image',
+            'path': pickedFile.path,
+            'file': file,
+            'isMock': false,
+          });
         });
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image de démonstration ajoutée!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image ajoutée depuis la caméra!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      _showErrorSnackBar('Erreur lors de l\'ajout du fichier: $e');
+      _showErrorSnackBar('Erreur lors de la capture de l\'image: $e');
     }
   }
 
@@ -409,62 +459,6 @@ class _CreateTicketContinueViewState extends State<CreateTicketContinueView> {
         backgroundColor: Colors.red,
       ),
     );
-  }
-
-  void _previewImage(Map<String, dynamic> file) {
-    if (file['isMock'] == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content:
-              Text('Aperçu non disponible pour les fichiers de démonstration'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    if (file['path'] != null && file['type'] == 'image') {
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
-              child: SizedBox(
-                width: double.infinity,
-                height: double.infinity,
-                child: InteractiveViewer(
-                  child: Image.file(
-                    File(file['path']),
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: Colors.black54,
-                        child: const Center(
-                          child: Text(
-                            'Impossible d\'afficher l\'image',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Aperçu non disponible pour ce type de fichier: ${file['name']}'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-    }
   }
 
   void _removeFile(int index) {

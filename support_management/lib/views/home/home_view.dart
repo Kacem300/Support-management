@@ -1,3 +1,9 @@
+import '../../models/models.dart';
+import '../../controllers/ticket_controller.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
+import '../tickets/audio_record_dialog.dart';
+import '../../controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/controllers.dart';
@@ -11,6 +17,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -19,57 +26,80 @@ class _HomeViewState extends State<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<TicketController>(context, listen: false).loadTickets();
       Provider.of<ClientController>(context, listen: false).loadClients();
+      // reset display limit when opening home
+      Provider.of<TicketController>(context, listen: false)
+          .resetDisplayLimit(2);
+    });
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 100) {
+        // near bottom -> load more
+        Provider.of<TicketController>(context, listen: false)
+            .increaseDisplayLimit(10);
+      }
     });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Section
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+    return SafeArea(
+      top: true,
+      child: Container(
+        color: const Color(0xFFF6F6F6), // page background #F6F6F6
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          // ensure extra bottom padding to account for device insets / nav bars
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewPadding.bottom + 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF6F6F6),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Top row with greeting and notification
+                    _buildHeaderSection(),
+
+                    const SizedBox(height: 20),
+
+                    // Search bar and Add button in same row
+                    _buildSearchAndAddSection(),
+                  ],
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row with greeting and notification
-                _buildHeaderSection(),
 
-                const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-                // Search bar and Add button in same row
-                _buildSearchAndAddSection(),
-              ],
-            ),
+              // Ticket Status Cards
+              _buildStatusCardsSection(),
+
+              const SizedBox(height: 30),
+
+              // Recent Tickets List
+              _buildRecentTicketsSection(),
+
+              const SizedBox(height: 48), // reduced spacer to avoid overflow
+            ],
           ),
-
-          const SizedBox(height: 20),
-
-          // Ticket Status Cards
-          _buildStatusCardsSection(),
-
-          const SizedBox(height: 30),
-
-          // Recent Tickets List
-          _buildRecentTicketsSection(),
-
-          const SizedBox(height: 100), // Space for bottom navigation
-        ],
+        ),
       ),
     );
   }
@@ -91,7 +121,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 ),
                 Text(
-                  authController.user?.name ?? 'Hamdi ben hbhb',
+                  authController.user?.name ?? 'Kacem Ben Brahim',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -101,10 +131,19 @@ class _HomeViewState extends State<HomeView> {
               ],
             ),
             Container(
-              padding: const EdgeInsets.all(8),
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF), // White background
-                borderRadius: BorderRadius.circular(12),
+                color: const Color.fromRGBO(255, 255, 255, 1),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color.fromRGBO(6, 6, 32, 0.08),
+                    offset: const Offset(0, 4),
+                    blurRadius: 40,
+                    spreadRadius: 0,
+                  ),
+                ],
               ),
               child: IconButton(
                 onPressed: () {
@@ -138,7 +177,7 @@ class _HomeViewState extends State<HomeView> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: TextFormField(
@@ -153,8 +192,8 @@ class _HomeViewState extends State<HomeView> {
                   padding: const EdgeInsets.all(12.0),
                   child: Image.asset(
                     'assets/images/Search.png',
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     errorBuilder: (context, error, stackTrace) {
                       return Icon(
                         Icons.search,
@@ -200,15 +239,17 @@ class _HomeViewState extends State<HomeView> {
         // Add ticket button
         GestureDetector(
           onTap: () {
-            Navigator.pushNamed(context, '/main/tickets/create/continue');
+            _showCreateTicketModal();
           },
           child: Container(
-            width: 50,
-            height: 50,
-            decoration: const BoxDecoration(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
               color: Colors.black,
-              shape: BoxShape.circle,
+              borderRadius:
+                  BorderRadius.circular(12), // <-- changed to 12px radius
             ),
+            alignment: Alignment.center,
             child: const Icon(
               Icons.add,
               color: Colors.white,
@@ -220,56 +261,321 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  void _showCreateTicketModal() {
+    String? _selectedCreationOption;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (BuildContext ctx) {
+        return StatefulBuilder(
+          builder: (BuildContext ctx, StateSetter setModalState) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
+                ),
+              ),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/images/ticketresolu.png',
+                        width: 24,
+                        height: 24,
+                        color: const Color(0xFF14B8A6),
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.confirmation_number,
+                            size: 24,
+                            color: Color(0xFF14B8A6),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Création ticket',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => Navigator.of(ctx).pop(),
+                        child: const Icon(
+                          Icons.close,
+                          size: 24,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Creation simple
+                  GestureDetector(
+                    onTap: () {
+                      setModalState(() {
+                        _selectedCreationOption = 'creation_simple';
+                      });
+                      Future.delayed(const Duration(milliseconds: 10), () {
+                        Navigator.of(ctx).pop();
+                        Navigator.pushNamed(context, '/main/tickets/create');
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: _selectedCreationOption == 'creation_simple'
+                            ? const Color(0xFF14B8A6).withOpacity(0.1)
+                            : Colors.grey[50],
+                        border: _selectedCreationOption == 'creation_simple'
+                            ? Border.all(
+                                color: const Color(0xFF14B8A6),
+                                width: 2,
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.edit,
+                            size: 24,
+                          ),
+                          SizedBox(width: 16),
+                          Text('Création simple'),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Record Audio option
+                  GestureDetector(
+                    onTap: () async {
+                      setModalState(() {
+                        _selectedCreationOption = 'record_audio';
+                      });
+                      final status = await Permission.microphone.request();
+                      if (!status.isGranted) {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Microphone permission required')),
+                        );
+                        return;
+                      }
+                      String? audioPath;
+                      await showDialog(
+                        context: ctx,
+                        barrierDismissible: false,
+                        builder: (dialogCtx) {
+                          return AudioRecordDialog(
+                            onRecordingComplete: (path) {
+                              audioPath = path;
+                            },
+                          );
+                        },
+                      );
+                      Navigator.of(ctx).pop();
+                      if (audioPath?.isNotEmpty == true) {
+                        Navigator.pushNamed(
+                          context,
+                          '/main/tickets/create/continue',
+                          arguments: {
+                            'audioPath': audioPath,
+                          },
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: _selectedCreationOption == 'record_audio'
+                            ? const Color(0xFF14B8A6).withOpacity(0.1)
+                            : Colors.grey[50],
+                        border: _selectedCreationOption == 'record_audio'
+                            ? Border.all(
+                                color: const Color(0xFF14B8A6),
+                                width: 2,
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.mic, size: 24),
+                          SizedBox(width: 16),
+                          Text('Enregistrer audio'),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Record Video option
+                  GestureDetector(
+                    onTap: () async {
+                      setModalState(() {
+                        _selectedCreationOption = 'record_video';
+                      });
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? pickedFile =
+                          await picker.pickVideo(source: ImageSource.camera);
+                      Navigator.of(ctx).pop();
+                      if (pickedFile != null) {
+                        Navigator.pushNamed(
+                          context,
+                          '/main/tickets/create/continue',
+                          arguments: {
+                            'videoPath': pickedFile.path,
+                          },
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: _selectedCreationOption == 'record_video'
+                            ? const Color(0xFF14B8A6).withOpacity(0.1)
+                            : Colors.grey[50],
+                        border: _selectedCreationOption == 'record_video'
+                            ? Border.all(
+                                color: const Color(0xFF14B8A6),
+                                width: 2,
+                              )
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(Icons.videocam, size: 24),
+                          SizedBox(width: 16),
+                          Text('Enregistrer vidéo'),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildStatusCardsSection() {
     return Consumer<TicketController>(
       builder: (context, ticketController, child) {
+        Widget statusCard(String title, Color color, String icon, int count,
+            TicketStatus status) {
+          return GestureDetector(
+            onTap: () {
+              // Filter by status in-place
+              ticketController.filterByStatus(status);
+
+              // Reset display limit to the true number of matching tickets (use allTickets)
+              final matchCount = ticketController.allTickets
+                  .where((t) => t.status == status)
+                  .length;
+              ticketController
+                  .resetDisplayLimit(matchCount > 0 ? matchCount : 2);
+
+              // Scroll to top so user sees filtered results
+              if (_scrollController.hasClients) {
+                _scrollController.animateTo(
+                  0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+            },
+            child: _buildStatusCard(
+              title: title,
+              count: count.toString().padLeft(2, '0'),
+              icon: icon,
+              color: color,
+              backgroundColor: color.withOpacity(0.03),
+            ),
+          );
+        }
+
+        // Use GridView.builder with SliverGridDelegateWithMaxCrossAxisExtent
+        // so we can enforce a max cross-axis extent and a fixed mainAxisExtent
+        // (width/height) for each status card regardless of screen width.
+        final statusItems = [
+          {
+            'title': 'Tickets résolu',
+            'color': const Color(0xFF27AE60),
+            'icon': 'assets/images/ticketresolu.png',
+            'count': ticketController.resolvedTicketsCount,
+            'status': TicketStatus.resolved,
+          },
+          {
+            'title': 'Tickets rejeter',
+            'color': const Color(0xFFE74C3C),
+            'icon': 'assets/images/ticketrejeter.png',
+            'count': ticketController.closedTicketsCount,
+            'status': TicketStatus.closed,
+          },
+          {
+            'title': 'Nouveau tickets',
+            'color': const Color(0xFF3498DB),
+            'icon': 'assets/images/ticketnouveau.png',
+            'count': ticketController.openTicketsCount,
+            'status': TicketStatus.open,
+          },
+          {
+            'title': 'Tickets en cours',
+            'color': const Color(0xFFF39C12),
+            'icon': 'assets/images/ticketencour.png',
+            'count': ticketController.inProgressTicketsCount,
+            'status': TicketStatus.inProgress,
+          },
+        ];
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: GridView.count(
+          child: GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5, // More rectangular like in Figma
-            children: [
-              _buildStatusCard(
-                title: 'Tickets résolu',
-                count: ticketController.resolvedTicketsCount
-                    .toString()
-                    .padLeft(2, '0'),
-                icon: 'assets/images/ticketresolu.png',
-                color: const Color(0xFF27AE60), // Green like in image
-                backgroundColor: const Color(0xFF27AE60).withOpacity(0.1),
-              ),
-              _buildStatusCard(
-                title: 'Tickets rejeter', // Match exact text from image
-                count: ticketController.closedTicketsCount
-                    .toString()
-                    .padLeft(2, '0'),
-                icon: 'assets/images/ticketrejeter.png',
-                color: const Color(0xFFE74C3C), // Red like in image
-                backgroundColor: const Color(0xFFE74C3C).withOpacity(0.1),
-              ),
-              _buildStatusCard(
-                title: 'Nouveau tickets',
-                count: ticketController.openTicketsCount
-                    .toString()
-                    .padLeft(2, '0'),
-                icon: 'assets/images/ticketnouveau.png',
-                color: const Color(0xFF3498DB), // Blue like in image
-                backgroundColor: const Color(0xFF3498DB).withOpacity(0.1),
-              ),
-              _buildStatusCard(
-                title: 'Tickets en cours',
-                count: ticketController.inProgressTicketsCount
-                    .toString()
-                    .padLeft(2, '0'),
-                icon: 'assets/images/ticketencour.png',
-                color: const Color(0xFFF39C12), // Orange like in image
-                backgroundColor: const Color(0xFFF39C12).withOpacity(0.1),
-              ),
-            ],
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              // enforce approximately 164 px per item (max),
+              // and a fixed main axis extent (height) of 82 px
+              maxCrossAxisExtent: 164,
+              mainAxisExtent: 82,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: statusItems.length,
+            itemBuilder: (context, index) {
+              final item = statusItems[index];
+              return statusCard(
+                item['title'] as String,
+                item['color'] as Color,
+                item['icon'] as String,
+                item['count'] as int,
+                item['status'] as TicketStatus,
+              );
+            },
           ),
         );
       },
@@ -283,65 +589,85 @@ class _HomeViewState extends State<HomeView> {
     required Color color,
     required Color backgroundColor,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color:
-            backgroundColor, // Use the background color with opacity instead of white
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return SizedBox(
+      width: 164, // fixed width
+      height: 82, // fixed height
+      child: Container(
+        // reduce vertical padding so the card can fit smaller constraints
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(11.33), // 11.33px radius
+          border: Border.all(
+            color: color,
+            width: 0.81, // 0.81px border
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Category name at the top
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11.33,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF595757),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const Spacer(),
-          // Bottom row with icon and number next to each other
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Icon on the left
-              Image.asset(
-                icon,
-                width: 32, // Bigger icon size
-                height: 32,
-                color: color,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.confirmation_number,
-                    size: 32,
-                    color: color,
-                  );
-                },
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Category name at the top
+            Text(
+              title,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w500,
+                fontStyle: FontStyle.normal,
+                fontSize: 11.33,
+                height: 1.0, // 100% line-height
+                letterSpacing: 0,
+                color: Color(0xFF595757),
               ),
-              const SizedBox(width: 8), // Space between icon and number
-              // Number next to the icon
-              Text(
-                count,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+            ),
+            // use a small gap instead of Spacer to avoid forcing large height
+            const SizedBox(height: 6),
+            // Bottom row with icon and number next to each other
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Icon on the left - do NOT apply color so asset keeps its original colors
+                Image.asset(
+                  icon,
+                  width: 28,
+                  height: 28,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      Icons.confirmation_number,
+                      size: 28,
+                      color: color,
+                    );
+                  },
                 ),
-              ),
-            ],
-          ),
-        ],
+                const SizedBox(width: 12),
+                // Number next to the icon, nudged slightly down for visual alignment
+                Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    count,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontStyle: FontStyle.normal,
+                      fontSize: 15,
+                      height:
+                          32.37 / 15, // line-height in px divided by font size
+                      letterSpacing: 0,
+                      color: Color(0xFF3A3F51),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -353,12 +679,14 @@ class _HomeViewState extends State<HomeView> {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: CircularProgressIndicator(color: Color(0xFF4ECDC4)),
+              child: CircularProgressIndicator(
+                  color: Color.fromARGB(255, 1, 122, 114)),
             ),
           );
         }
 
-        final recentTickets = ticketController.tickets.take(2).toList();
+        // Controller already applies displayLimit when filtering, so use tickets directly
+        final recentTickets = ticketController.tickets.toList();
 
         // Show mock tickets like in the original design when no data or few tickets
         if (recentTickets.isEmpty) {
@@ -369,12 +697,12 @@ class _HomeViewState extends State<HomeView> {
                 ticketId: 'Ticket# 2023-CS123',
                 date: '13.08.2023',
                 time: '10:55',
-                status: 'Nouveau',
+                status: TicketStatus.open,
                 priority: 'Urgente',
                 description:
                     'Design a simple home pages with clean layout and color based on the guidelin to...',
                 isFirst: true,
-                statusIcon: _getStatusIcon('Nouveau'),
+                statusIcon: _statusIconFromEnum(TicketStatus.open),
               ),
               const SizedBox(height: 16),
               _buildMockTicketContainer(
@@ -382,20 +710,27 @@ class _HomeViewState extends State<HomeView> {
                 ticketId: 'Ticket# 2023-CS123',
                 date: '13.08.2023',
                 time: '10:55',
-                status: 'Nouveau',
+                status: TicketStatus.open,
                 priority: 'Urgente',
                 description:
                     'Design a simple home pages with clean layout and color based on the guidelin to...',
                 isFirst: false,
-                statusIcon: _getStatusIcon('Nouveau'),
+                statusIcon: _statusIconFromEnum(TicketStatus.open),
               ),
             ],
           );
         }
 
+        // Deduplicate tickets by id to avoid rendering duplicates
+        final uniqueMap = <String, TicketModel>{};
+        for (final t in recentTickets) {
+          uniqueMap[t.id] = t;
+        }
+        final uniqueTickets = uniqueMap.values.toList();
+
         return Column(
           children: [
-            ...recentTickets.asMap().entries.map((entry) {
+            ...uniqueTickets.asMap().entries.map((entry) {
               final index = entry.key;
               final ticket = entry.value;
 
@@ -423,13 +758,13 @@ class _HomeViewState extends State<HomeView> {
                       '${ticket.createdAt.day}.${ticket.createdAt.month.toString().padLeft(2, '0')}.${ticket.createdAt.year}',
                   time:
                       '${ticket.createdAt.hour}:${ticket.createdAt.minute.toString().padLeft(2, '0')}',
-                  status: _getStatusDisplay(ticket.status),
+                  status: ticket.status,
                   priority: _getPriorityDisplay(ticket.priority),
                   description: ticket.description.length > 100
                       ? '${ticket.description.substring(0, 100)}...'
                       : ticket.description,
                   isFirst: index == 0,
-                  statusIcon: _getStatusIcon(_getStatusDisplay(ticket.status)),
+                  statusIcon: _statusIconFromEnum(ticket.status),
                 ),
               );
             }),
@@ -444,7 +779,7 @@ class _HomeViewState extends State<HomeView> {
     required String ticketId,
     required String date,
     required String time,
-    required String status,
+    required TicketStatus status,
     /* required Color statusColor, */
     required String priority,
     /* required Color priorityColor, */
@@ -468,17 +803,17 @@ class _HomeViewState extends State<HomeView> {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black,
+                        color: Color(0xFF292A2D),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       ticketId,
                       style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                        fontSize: 12,
+                        color: Color(0xFF8F8E92),
                       ),
                     ),
                   ],
@@ -494,26 +829,28 @@ class _HomeViewState extends State<HomeView> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Use the appropriate status icon
+                    // Use the appropriate status icon and label from enum
                     Image.asset(
-                      _getStatusIcon(status),
+                      statusIcon ?? _statusIconFromEnum(status),
                       width: 19,
                       height: 19,
+                      color: _statusColorFromEnum(status),
+                      colorBlendMode: BlendMode.srcIn,
                       errorBuilder: (context, error, stackTrace) {
                         return Icon(
                           Icons.circle,
                           size: 8,
-                          color: Colors.grey[600],
+                          color: _statusColorFromEnum(status),
                         );
                       },
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      status,
-                      style: const TextStyle(
+                      _statusLabelFromEnum(status),
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFF39C12),
+                        color: _statusColorFromEnum(status),
                       ),
                     ),
                   ],
@@ -600,10 +937,14 @@ class _HomeViewState extends State<HomeView> {
           // Description
           Text(
             description,
-            style: TextStyle(
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w400,
+              fontStyle: FontStyle.normal,
               fontSize: 14,
-              color: Colors.grey[700],
-              height: 1.4,
+              height: 20 / 14, // line-height in px divided by font size
+              letterSpacing: -0.28, // -2% of 14px is -0.28
+              color: Color(0xFF8A8F9B),
             ),
           ),
         ],
@@ -616,7 +957,7 @@ class _HomeViewState extends State<HomeView> {
     required String ticketId,
     required String date,
     required String time,
-    required String status,
+    required TicketStatus status,
     required String priority,
     required String description,
     required bool isFirst,
@@ -644,18 +985,52 @@ class _HomeViewState extends State<HomeView> {
         priority: priority,
         description: description,
         isFirst: isFirst,
-        statusIcon: statusIcon ?? _getStatusIcon(status),
+        statusIcon: statusIcon ?? _statusIconFromEnum(status),
       ),
     );
   }
 
-  String _getStatusDisplay(dynamic status) {
-    final statusStr = status.toString().toLowerCase();
-    if (statusStr.contains('open')) return 'Nouveau';
-    if (statusStr.contains('progress')) return 'En cours';
-    if (statusStr.contains('resolved')) return 'Résolu';
-    if (statusStr.contains('closed')) return 'Fermé';
-    return 'Nouveau';
+  // Helpers to map TicketStatus enum to icon, label, and color
+  String _statusIconFromEnum(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.open:
+        return 'assets/images/stickernouveau.png';
+      case TicketStatus.inProgress:
+        // use stickerEncour for tickets "en cours / ouvert"
+        return 'assets/images/stickerEncour.png';
+      case TicketStatus.resolved:
+        return 'assets/images/StickerResolu.png';
+      case TicketStatus.closed:
+        return 'assets/images/StickerRejeter.png';
+    }
+  }
+
+  String _statusLabelFromEnum(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.open:
+        return 'Nouveau';
+      case TicketStatus.inProgress:
+        return 'En cours';
+      case TicketStatus.resolved:
+        return 'Résolu';
+      case TicketStatus.closed:
+        // display as 'Rejeter' per request
+        return 'Rejeter';
+    }
+  }
+
+  Color _statusColorFromEnum(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.open:
+        return const Color(0xFF3498DB);
+      case TicketStatus.inProgress:
+        // match the status-card color for "Tickets en cours"
+        return const Color(0xFFF39C12);
+      case TicketStatus.resolved:
+        return const Color(0xFF27AE60);
+      case TicketStatus.closed:
+        return const Color(0xFFE74C3C);
+    }
   }
 
   String _getPriorityDisplay(dynamic priority) {
@@ -682,18 +1057,5 @@ class _HomeViewState extends State<HomeView> {
     return 'assets/images/flag.png'; // Default
   }
 
-  // Get status icon based on status
-  String _getStatusIcon(String status) {
-    final statusStr = status.toLowerCase();
-    if (statusStr.contains('nouveau')) {
-      return 'assets/images/stickernouveau.png'; // Nouveau
-    } else if (statusStr.contains('ouvert') || statusStr.contains('en cours')) {
-      return 'assets/images/stickerOuvert.png'; // Ouvert/En cours
-    } else if (statusStr.contains('rejeter') || statusStr.contains('fermé')) {
-      return 'assets/images/stickerRejeter.png'; // Rejeter/Fermé
-    } else if (statusStr.contains('résolu') || statusStr.contains('resolu')) {
-      return 'assets/images/stickerResolu.png'; // Résolu
-    }
-    return 'assets/images/stickernouveau.png'; // Default
-  }
+  // legacy string-based status icon helper removed — using enum mappings
 }

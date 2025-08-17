@@ -17,6 +17,9 @@ class TicketController extends ChangeNotifier {
   // Getters
   List<TicketModel> get tickets => _filteredTickets;
   List<TicketModel> get allTickets => _tickets;
+  // Number of tickets to show in recent list; supports lazy load
+  int _displayLimit = 2;
+  int get displayLimit => _displayLimit;
   bool get isLoading => _isLoading;
   String? get error => _error;
   String get searchQuery => _searchQuery;
@@ -37,6 +40,16 @@ class TicketController extends ChangeNotifier {
 
   void _setTickets(List<TicketModel> tickets) {
     _tickets = tickets;
+    _applyFilters();
+  }
+
+  void resetDisplayLimit([int initial = 2]) {
+    _displayLimit = initial;
+    notifyListeners();
+  }
+
+  void increaseDisplayLimit([int step = 10]) {
+    _displayLimit = (_displayLimit + step).clamp(0, _tickets.length);
     _applyFilters();
   }
 
@@ -72,6 +85,11 @@ class TicketController extends ChangeNotifier {
 
       return true;
     }).toList();
+
+    // Apply display limit for 'recent' lists / lazy loading
+    if (_displayLimit > 0 && _filteredTickets.length > _displayLimit) {
+      _filteredTickets = _filteredTickets.sublist(0, _displayLimit);
+    }
 
     notifyListeners();
   }

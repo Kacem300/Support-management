@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:provider/provider.dart';
+import '../../controllers/auth_controller.dart';
 import '../../constants/constants.dart';
 
 class SplashView extends StatefulWidget {
@@ -60,20 +62,28 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
     // Wait 2 seconds, then fade out logo and show text
     await Future.delayed(const Duration(seconds: 2));
 
+    if (!mounted) return;
+
+    // Vérifier la session utilisateur
+    final authController = Provider.of<AuthController>(context, listen: false);
+    await authController.checkAuthStatus();
+    if (authController.isLoggedIn) {
+      Navigator.pushReplacementNamed(context, '/home');
+      return;
+    }
+
+    setState(() {
+      _showLogo = false;
+      _showText = true;
+    });
+
+    _textController.forward();
+
+    // Wait 2 more seconds, then navigate to onboarding
+    await Future.delayed(const Duration(seconds: 2));
+
     if (mounted) {
-      setState(() {
-        _showLogo = false;
-        _showText = true;
-      });
-
-      _textController.forward();
-
-      // Wait 2 more seconds, then navigate to onboarding
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/onboarding');
-      }
+      Navigator.pushReplacementNamed(context, '/onboarding');
     }
   }
 

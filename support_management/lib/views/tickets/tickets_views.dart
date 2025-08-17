@@ -1,6 +1,10 @@
+import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/controllers.dart';
+import '../../models/models.dart';
+import 'audio_record_dialog.dart';
 
 class TicketsView extends StatefulWidget {
   const TicketsView({super.key});
@@ -144,17 +148,41 @@ class _TicketsViewState extends State<TicketsView> {
 
                   // Record Audio option
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       setModalState(() {
                         _selectedCreationOption = 'record_audio';
                       });
-                      Future.delayed(const Duration(milliseconds: 200), () {
+                      final status = await Permission.microphone.request();
+                      if (!status.isGranted) {
                         Navigator.of(context).pop();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                              content: Text('Audio recording coming soon!')),
+                              content: Text('Permission micro refusée.')),
                         );
-                      });
+                        return;
+                      }
+                      String? audioPath;
+                      await showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) {
+                          return AudioRecordDialog(
+                            onRecordingComplete: (String? path) {
+                              audioPath = path;
+                            },
+                          );
+                        },
+                      );
+                      Navigator.of(context).pop();
+                      if (audioPath != null && audioPath!.isNotEmpty) {
+                        Navigator.pushNamed(
+                          context,
+                          '/main/tickets/create/continue',
+                          arguments: {
+                            'audioPath': audioPath,
+                          },
+                        );
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -198,17 +226,23 @@ class _TicketsViewState extends State<TicketsView> {
 
                   // Record Video option
                   GestureDetector(
-                    onTap: () {
+                    onTap: () async {
                       setModalState(() {
                         _selectedCreationOption = 'record_video';
                       });
-                      Future.delayed(const Duration(milliseconds: 200), () {
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Video recording coming soon!')),
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? pickedFile =
+                          await picker.pickVideo(source: ImageSource.camera);
+                      Navigator.of(context).pop();
+                      if (pickedFile != null) {
+                        Navigator.pushNamed(
+                          context,
+                          '/main/tickets/create/continue',
+                          arguments: {
+                            'videoPath': pickedFile.path,
+                          },
                         );
-                      });
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -453,12 +487,12 @@ class _TicketsViewState extends State<TicketsView> {
                           '${ticket.createdAt.day}.${ticket.createdAt.month.toString().padLeft(2, '0')}.${ticket.createdAt.year}',
                       time:
                           '${ticket.createdAt.hour}:${ticket.createdAt.minute.toString().padLeft(2, '0')}',
-                      status: _getStatusDisplay(ticket.status),
+                      status: ticket.status,
                       priority: _getPriorityDisplay(ticket.priority),
                       description: ticket.description.length > 100
                           ? '${ticket.description.substring(0, 100)}...'
                           : ticket.description,
-                      statusIcon: _getStatusIcon(ticket.status),
+                      statusIcon: _statusIconFromEnum(ticket.status),
                     ),
                   );
                 },
@@ -507,7 +541,7 @@ class _TicketsViewState extends State<TicketsView> {
     required String ticketId,
     required String date,
     required String time,
-    required String status,
+    required TicketStatus status,
     required String priority,
     required String description,
     String? statusIcon,
@@ -544,12 +578,12 @@ class _TicketsViewState extends State<TicketsView> {
                   ],
                 ),
               ),
-              // Status with orange background like home view
+              // Status pill
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F6F6).withOpacity(1),
+                  color: const Color(0xFFF6F6F6),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -560,11 +594,13 @@ class _TicketsViewState extends State<TicketsView> {
                         statusIcon,
                         width: 19,
                         height: 19,
+                        color: _statusColorFromEnum(status),
+                        colorBlendMode: BlendMode.srcIn,
                         errorBuilder: (context, error, stackTrace) {
                           return Icon(
                             Icons.circle,
                             size: 8,
-                            color: Colors.grey[600],
+                            color: _statusColorFromEnum(status),
                           );
                         },
                       )
@@ -572,15 +608,15 @@ class _TicketsViewState extends State<TicketsView> {
                       Icon(
                         Icons.circle,
                         size: 8,
-                        color: Colors.grey[600],
+                        color: _statusColorFromEnum(status),
                       ),
                     const SizedBox(width: 6),
                     Text(
-                      status,
-                      style: const TextStyle(
+                      _statusLabelFromEnum(status),
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFF39C12),
+                        color: _statusColorFromEnum(status),
                       ),
                     ),
                   ],
@@ -678,13 +714,18 @@ class _TicketsViewState extends State<TicketsView> {
     );
   }
 
-  String _getStatusDisplay(dynamic status) {
-    final statusStr = status.toString().toLowerCase();
-    if (statusStr.contains('open')) return 'Nouveau';
-    if (statusStr.contains('progress')) return 'En cours';
-    if (statusStr.contains('resolved')) return 'Résolu';
-    if (statusStr.contains('closed')) return 'Fermé';
-    return 'Nouveau';
+  // Map TicketStatus enum to display label
+  String _statusLabelFromEnum(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.open:
+        return 'Nouveau';
+      case TicketStatus.inProgress:
+        return 'En cours';
+      case TicketStatus.resolved:
+        return 'Résolu';
+      case TicketStatus.closed:
+        return 'Fermé';
+    }
   }
 
   String _getPriorityDisplay(dynamic priority) {
@@ -696,17 +737,31 @@ class _TicketsViewState extends State<TicketsView> {
     return 'Moyenne';
   }
 
-  String? _getStatusIcon(dynamic status) {
-    final statusStr = status.toString().toLowerCase();
-    if (statusStr.contains('open')) return 'assets/images/stickernouveau.png';
-    if (statusStr.contains('progress')) {
-      return 'assets/images/stickerOuvert.png';
+  // Map enum to icon path
+  String _statusIconFromEnum(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.open:
+        return 'assets/images/stickernouveau.png';
+      case TicketStatus.inProgress:
+        return 'assets/images/stickerOuvert.png';
+      case TicketStatus.resolved:
+        return 'assets/images/stickerResolu.png';
+      case TicketStatus.closed:
+        return 'assets/images/stickerRejeter.png';
     }
-    if (statusStr.contains('resolved')) {
-      return 'assets/images/stickerResolu.png';
+  }
+
+  Color _statusColorFromEnum(TicketStatus status) {
+    switch (status) {
+      case TicketStatus.open:
+        return const Color(0xFF3498DB);
+      case TicketStatus.inProgress:
+        return const Color(0xFFF39C12);
+      case TicketStatus.resolved:
+        return const Color(0xFF27AE60);
+      case TicketStatus.closed:
+        return const Color(0xFFE74C3C);
     }
-    if (statusStr.contains('closed')) return 'assets/images/stickerRejeter.png';
-    return 'assets/images/stickernouveau.png';
   }
 
   // Get priority icon based on priority level

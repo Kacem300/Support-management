@@ -37,7 +37,7 @@ class AuthServiceImpl implements AuthService {
     _currentUser = UserModel(
       id: '1',
       email: email,
-      name: 'John Doe',
+      name: 'Kacem Ben Brahim',
       createdAt: DateTime.now(),
       avatar: 'assets/images/default_avatar.png',
     );

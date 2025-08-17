@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../controllers/client_controller.dart';
 import '../../models/client_model.dart';
 import 'client_filter_view.dart';
-import 'client_details_view.dart';
+import 'client_details_view.dart'; // Import the ClientDetailsView
 
 class ClientsView extends StatefulWidget {
   const ClientsView({super.key});
@@ -134,18 +134,24 @@ class _ClientsViewState extends State<ClientsView> {
                             ),
                             prefixIcon: Padding(
                               padding: const EdgeInsets.all(12.0),
-                              child: Image.asset(
-                                'assets/images/Search.png',
-                                width: 20,
-                                height: 20,
-                                color: Colors.grey[400],
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Icon(
-                                    Icons.search,
-                                    color: Colors.grey[400],
-                                    size: 20,
-                                  );
-                                },
+                              child: Opacity(
+                                opacity: 1,
+                                child: Transform.rotate(
+                                  angle: 0,
+                                  child: Image.asset(
+                                    'assets/images/Search.png',
+                                    width: 24,
+                                    height: 24,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(
+                                        Icons.search,
+                                        color: Colors.grey[400],
+                                        size: 24,
+                                      );
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
                             border: InputBorder.none,
@@ -237,17 +243,19 @@ class _ClientsViewState extends State<ClientsView> {
   Widget _buildClientCard(ClientModel client) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
+        Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => ClientDetailsView(
-              clientId: client.id,
-              clientName: client.name,
-              joinDate: 'Client depuis ${client.joinDate.year}',
-              isActive: client.isActive,
-              ticketsInProgress: client.ticketsInProgress,
-              ticketsResolved: client.ticketsResolved,
-              avatar: client.avatar ?? 'assets/images/profile.png',
+              clientId: client.id, // Pass the client ID
+              clientName: client.name, // Pass the client name
+              joinDate: client.joinDate
+                  .toIso8601String(), // Convert DateTime to String
+              isActive: client.isActive, // Pass the active status
+              ticketsInProgress:
+                  client.ticketsInProgress, // Pass tickets in progress
+              ticketsResolved: client.ticketsResolved, // Pass resolved tickets
+              avatar: client.avatar ??
+                  'assets/images/default_avatar.png', // Provide default value if null
             ),
           ),
         );
@@ -258,11 +266,11 @@ class _ClientsViewState extends State<ClientsView> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
+              color: Color(0x14000000), // 8% opacity black
+              blurRadius: 8, // Reduced from 20
+              offset: Offset(0, 2), // Reduced offset
             ),
           ],
         ),
@@ -362,7 +370,7 @@ class _ClientsViewState extends State<ClientsView> {
             ),
 
             // Divider line
-            const SizedBox(height: 5),
+            const SizedBox(height: 10),
             Container(
               height: 2,
               decoration: BoxDecoration(
@@ -375,25 +383,31 @@ class _ClientsViewState extends State<ClientsView> {
             Row(
               children: [
                 Expanded(
-                  child: _buildTicketStat(
-                    'Ticket en cours',
-                    client.ticketsInProgress.toString(),
-                    'assets/images/clientIcon1.png',
-                    const Color(0xFFFF9500),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: _buildTicketStat(
+                      'Ticket en cours',
+                      client.ticketsInProgress.toString(),
+                      'assets/images/clientIcon1.png',
+                      const Color(0xFFFF9500),
+                    ),
                   ),
                 ),
                 // Vertical divider
                 Container(
-                  height: 60,
+                  height: 70,
                   width: 2,
                   color: Colors.grey[200],
                 ),
                 Expanded(
-                  child: _buildTicketStat(
-                    'Ticket résolu',
-                    client.ticketsResolved.toString(),
-                    'assets/images/clientIcon2.png',
-                    const Color(0xFF00B341),
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 12),
+                    child: _buildTicketStat(
+                      'Ticket résolu',
+                      client.ticketsResolved.toString(),
+                      'assets/images/clientIcon2.png',
+                      const Color(0xFF00B341),
+                    ),
                   ),
                 ),
               ],
@@ -406,35 +420,42 @@ class _ClientsViewState extends State<ClientsView> {
 
   Widget _buildTicketStat(
       String title, String count, String iconPath, Color color) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    double iconBox = screenWidth * 0.15;
+    double iconSize = screenWidth * 0.11;
+    double fontSizeTitle =
+        screenWidth < 350 ? 9 : (screenWidth < 400 ? 10 : 12);
+    double fontSizeCount =
+        screenWidth < 350 ? 10 : (screenWidth < 400 ? 11 : 13);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Icon on the left
+          // Responsive Icon on the left
           SizedBox(
-            width: 48,
-            height: 48,
+            width: iconBox,
+            height: iconBox,
             child: Center(
               child: Image.asset(
                 iconPath,
-                width: 32,
-                height: 32,
+                width: iconSize,
+                height: iconSize,
                 color: color,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(
                     title.contains('cours')
                         ? Icons.access_time
                         : Icons.check_circle,
-                    size: 32,
+                    size: iconSize,
                     color: color,
                   );
                 },
               ),
             ),
           ),
-          const SizedBox(width: 12),
-          // Texts stacked vertically, aligned left
+          const SizedBox(width: 0),
+          // Texts stacked vertically, aligned left, both forced to single line
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -442,20 +463,24 @@ class _ClientsViewState extends State<ClientsView> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 12,
+                  style: TextStyle(
+                    fontSize: fontSizeTitle,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '$count TICKETS',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: fontSizeCount,
                     color: Colors.grey[500],
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

@@ -31,6 +31,8 @@ class ClientDetailsView extends StatefulWidget {
 class _ClientDetailsViewState extends State<ClientDetailsView> {
   bool _isInfoExpanded = true; // Initially expanded as shown in first image
   bool _isScrolled = false; // Track scroll state
+  final bool _hasReachedTopOnce =
+      false; // Track if user has reached top once in scroll mode
   final ScrollController _scrollController = ScrollController();
   ClientModel? _clientDetails;
 
@@ -51,14 +53,26 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     super.dispose();
   }
 
+  double _lastOffset = 0;
+
   void _onScroll() {
-    // Only enter scroll mode when scrolling down more than 500 pixels
-    // Don't exit automatically - user must tap back button
-    if (!_isScrolled && _scrollController.offset > 500) {
+    double offset = _scrollController.offset;
+
+    // Enter scroll mode
+    if (!_isScrolled && offset > 800) {
       setState(() {
         _isScrolled = true;
       });
     }
+
+    // Exit scroll mode only if scrolling up to the top
+    /* else if (_isScrolled && offset < 100 && _lastOffset > offset) {
+      setState(() {
+        _isScrolled = false;
+      });
+    } */
+
+    _lastOffset = offset;
   }
 
   Future<void> _loadClientDetails() async {
@@ -130,17 +144,18 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
           return Stack(
             children: [
               // Main scrollable content
-              if (!_isScrolled)
-                SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Column(
-                    children: [
-                      // Header section with subtitle
-                      Container(
-                        width: double.infinity,
-                        color: Colors.white,
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                        child: const Text(
+              SingleChildScrollView(
+                controller: _scrollController,
+                child: Column(
+                  children: [
+                    // Header section with subtitle
+                    Container(
+                      width: double.infinity,
+                      color: Colors.white,
+                      padding: const EdgeInsets.fromLTRB(32, 0, 20, 24),
+                      child: const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
                           'Expliquez votre problème, nous le résolvons.',
                           style: TextStyle(
                             fontSize: 14,
@@ -149,187 +164,205 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                           ),
                         ),
                       ),
+                    ),
 
-                      // Main content
-                      Column(
-                        children: [
-                          // Client profile section
-                          Padding(
-                            padding: const EdgeInsets.all(15),
-                            child: _buildProfileSection(client),
-                          ),
-                          const SizedBox(height: 16),
+                    // Add top padding when scrolled to make space for sticky header
+                    if (_isScrolled) const SizedBox(height: 200),
 
-                          // Client information section
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: _buildInfoSection(client),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Tickets statistics section
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 15),
-                            child: _buildTicketsSection(client),
-                          ),
-                          const SizedBox(height: 24),
-
-                          // Recent tickets section
-                          _buildRecentTicketsSection(),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-              // When scrolled, show only the tickets section as scrollable
-              if (_isScrolled)
-                Column(
-                  children: [
-                    // Fixed sticky header
-                    Container(
-                      color: Colors.white,
-                      padding: const EdgeInsets.all(20),
+                    // Main content
+                    Padding(
+                      padding: const EdgeInsets.all(15),
                       child: Column(
                         children: [
-                          Row(
+                          // Client Profile Card - Only show when not scrolled
+                          if (!_isScrolled) ...[
+                            _buildProfileSection(client),
+                            const SizedBox(height: 16),
+                            _buildInfoSection(client),
+                            const SizedBox(height: 24),
+                            _buildTicketsSection(client),
+                            const SizedBox(height: 24),
+                          ],
+
+                          // Recent Tickets Section
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Back button to exit scroll mode
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _isScrolled = false;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Icon(
-                                    Icons.arrow_back,
-                                    size: 20,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(child: _buildCompactProfile(client)),
+                              // Add extra spacing when scrolled
+                              if (_isScrolled) const SizedBox(height: 24),
+                              _buildRecentTicketsSection(),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 80,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 120,
-                                    child: _buildCompactTicketStatCard(
-                                      'Nouveau',
-                                      client.ticketsNew.toString(),
-                                      'assets/images/ticketnouveau.png',
-                                      const Color(0xFF3B82F6),
-                                      const Color(0xFFDBEAFE),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  SizedBox(
-                                    width: 120,
-                                    child: _buildCompactTicketStatCard(
-                                      'En cours',
-                                      client.ticketsInProgress.toString(),
-                                      'assets/images/ticketencour.png',
-                                      const Color(0xFFF59E0B),
-                                      const Color(0xFFFEF3C7),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  SizedBox(
-                                    width: 120,
-                                    child: _buildCompactTicketStatCard(
-                                      'Résolu',
-                                      client.ticketsResolved.toString(),
-                                      'assets/images/ticketresolu.png',
-                                      const Color(0xFF10B981),
-                                      const Color(0xFFD1FAE5),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  SizedBox(
-                                    width: 120,
-                                    child: _buildCompactTicketStatCard(
-                                      'Rejeté',
-                                      client.ticketsRejected.toString(),
-                                      'assets/images/ticketrejeter.png',
-                                      const Color(0xFFEF4444),
-                                      const Color(0xFFFEE2E2),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: const Color(0xFFE9ECEF),
-                                width: 1,
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.search,
-                                  color: Colors.grey[400],
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    'Recherche dans les tickets...',
-                                    style: TextStyle(
-                                      color: Colors.grey[400],
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.tune,
-                                  color: Colors.grey[500],
-                                  size: 20,
-                                ),
-                              ],
-                            ),
-                          ),
                         ],
-                      ),
-                    ),
-                    // Scrollable tickets section only
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        child: _buildRecentTicketsSection(),
                       ),
                     ),
                   ],
                 ),
+              ),
 
-              // Remove the old sticky header since it's now integrated above
+              // Sticky header when scrolled - Fixed at top
+              if (_isScrolled)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        // Client name only
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundImage: AssetImage(client.avatar ??
+                                  'assets/images/default_avatar.png'),
+                              backgroundColor: Colors.grey[300],
+                              child: (client.avatar?.isEmpty ?? true)
+                                  ? Text(
+                                      client.name.substring(0, 1).toUpperCase(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              client.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Divider
+                        Divider(
+                          color: Colors.grey[300],
+                          thickness: 1,
+                          height: 1,
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Horizontally scrollable tickets
+                        SizedBox(
+                          height: 60,
+                          child: SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 4),
+                                SizedBox(
+                                  width: 120,
+                                  child: _buildCompactTicketStatCard(
+                                    'Tickets résolu',
+                                    client.ticketsResolved
+                                        .toString()
+                                        .padLeft(2, '0'),
+                                    'assets/images/ticketresolu.png',
+                                    const Color(0xFF27AE60),
+                                    const Color(0xFF27AE60).withOpacity(0.1),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 120,
+                                  child: _buildCompactTicketStatCard(
+                                    'Tickets rejeter',
+                                    client.ticketsRejected
+                                        .toString()
+                                        .padLeft(2, '0'),
+                                    'assets/images/ticketrejeter.png',
+                                    const Color(0xFFE74C3C),
+                                    const Color(0xFFE74C3C).withOpacity(0.1),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 120,
+                                  child: _buildCompactTicketStatCard(
+                                    'Nouveau tickets',
+                                    client.ticketsNew
+                                        .toString()
+                                        .padLeft(2, '0'),
+                                    'assets/images/ticketnouveau.png',
+                                    const Color(0xFF3498DB),
+                                    const Color(0xFF3498DB).withOpacity(0.1),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                SizedBox(
+                                  width: 120,
+                                  child: _buildCompactTicketStatCard(
+                                    'Tickets en cours',
+                                    client.ticketsInProgress
+                                        .toString()
+                                        .padLeft(2, '0'),
+                                    'assets/images/ticketencour.png',
+                                    const Color(0xFFF39C12),
+                                    const Color(0xFFF39C12).withOpacity(0.1),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Search bar
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.search,
+                                color: Colors.grey[400],
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Recherche dans les tickets...',
+                                  style: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                              Icon(
+                                Icons.tune,
+                                color: Colors.grey[500],
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           );
         },
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -507,39 +540,6 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     );
   }
 
-  Widget _buildCompactProfile(ClientModel client) {
-    return Row(
-      children: [
-        CircleAvatar(
-          radius: 20,
-          backgroundImage:
-              AssetImage(client.avatar ?? 'assets/images/default_avatar.png'),
-          backgroundColor: Colors.grey[300],
-          onBackgroundImageError: (exception, stackTrace) {},
-          child: (client.avatar?.isEmpty ?? true)
-              ? Text(
-                  client.name.substring(0, 1).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                )
-              : null,
-        ),
-        const SizedBox(width: 12),
-        Text(
-          client.name,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildInfoSection(ClientModel client) {
     return Container(
       width: double.infinity,
@@ -629,42 +629,47 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
             ),
           ),
           const SizedBox(height: 20),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.5,
+          Row(
             children: [
-              _buildTicketStatCard(
+              Expanded(
+                  child: _buildTicketStatCard(
                 'Tickets résolu',
                 client.ticketsResolved.toString().padLeft(2, '0'),
-                'assets/images/ticketresolu.png',
-                const Color(0xFF27AE60), // Green like in home_view
-                const Color(0xFF27AE60).withOpacity(0.1),
-              ),
-              _buildTicketStatCard(
+                Icons.check_circle_outline,
+                const Color(0xFFE64B32), // border
+                const Color(0x08E64B32), // background
+              )),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _buildTicketStatCard(
                 'Tickets rejeter',
                 client.ticketsRejected.toString().padLeft(2, '0'),
-                'assets/images/ticketrejeter.png',
-                const Color(0xFFE74C3C), // Red like in home_view
-                const Color(0xFFE74C3C).withOpacity(0.1),
-              ),
-              _buildTicketStatCard(
+                Icons.cancel_outlined,
+                const Color(0xFFE46C09), // border
+                const Color(0x12E46C09), // background
+              )),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                  child: _buildTicketStatCard(
                 'Nouveau tickets',
                 client.ticketsNew.toString().padLeft(2, '0'),
-                'assets/images/ticketnouveau.png',
-                const Color(0xFF3498DB), // Blue like in home_view
-                const Color(0xFF3498DB).withOpacity(0.1),
-              ),
-              _buildTicketStatCard(
+                Icons.fiber_new_outlined,
+                const Color(0xFF0DC634), // border
+                const Color(0x0F0DC634), // background
+              )),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: _buildTicketStatCard(
                 'Tickets en cours',
                 client.ticketsInProgress.toString().padLeft(2, '0'),
-                'assets/images/ticketencour.png',
-                const Color(0xFFF39C12), // Orange like in home_view
-                const Color(0xFFF39C12).withOpacity(0.1),
-              ),
+                Icons.hourglass_bottom_outlined,
+                const Color(0xFF1443C3), // border
+                const Color(0x0F1D1DCE), // background
+              )),
             ],
           ),
         ],
@@ -758,63 +763,75 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
   Widget _buildTicketStatCard(
     String title,
     String count,
-    String iconPath,
-    Color iconColor,
+    IconData icon,
+    Color borderColor,
     Color backgroundColor,
   ) {
+    // Choose the icon asset based on the title
+    String iconAsset;
+    switch (title) {
+      case 'Tickets résolu':
+        iconAsset = 'assets/images/ticketresolu.png';
+        break;
+      case 'Tickets rejeter':
+        iconAsset = 'assets/images/ticketrejeter.png';
+        break;
+      case 'Nouveau tickets':
+        iconAsset = 'assets/images/ticketnouveau.png';
+        break;
+      case 'Tickets en cours':
+        iconAsset = 'assets/images/ticketencour.png';
+        break;
+      default:
+        iconAsset = 'assets/images/ticketresolu.png';
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: iconColor, width: 2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: borderColor, width: 0.81),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // Category name at the top
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11.33,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF595757),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(8),
             ),
-          ),
-          const Spacer(),
-          // Bottom row with icon and number next to each other
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              // Icon on the left
-              Image.asset(
-                iconPath,
-                width: 32, // Bigger icon size
-                height: 32,
-                color: iconColor,
+            child: Center(
+              child: Image.asset(
+                iconAsset,
+                width: 20,
+                height: 20,
+                color: borderColor,
                 errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.confirmation_number,
-                    size: 32,
-                    color: iconColor,
-                  );
+                  return Icon(icon, color: borderColor, size: 20);
                 },
               ),
-              const SizedBox(width: 8), // Space between icon and number
-              // Number next to the icon
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
               Text(
                 count,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: borderColor,
                 ),
               ),
             ],
@@ -1082,191 +1099,6 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: BottomNavigationBar(
-            currentIndex: 3,
-            onTap: (index) {
-              switch (index) {
-                case 0:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main/home',
-                    (route) => false,
-                  );
-                  break;
-                case 1:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main/tickets',
-                    (route) => false,
-                  );
-                  break;
-                case 3:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main/clients',
-                    (route) => false,
-                  );
-                  break;
-                case 4:
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/main/menu',
-                    (route) => false,
-                  );
-                  break;
-              }
-            },
-            type: BottomNavigationBarType.fixed,
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            selectedItemColor: const Color(0xFF4ECDC4),
-            unselectedItemColor: Colors.grey[600],
-            selectedFontSize: 12,
-            unselectedFontSize: 11,
-            items: [
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/images/home.png', 0),
-                label: 'Accueil',
-              ),
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/images/ticket.png', 1),
-                label: 'Tickets',
-              ),
-              const BottomNavigationBarItem(
-                icon: SizedBox(height: 40),
-                label: '',
-              ),
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/images/Clients.png', 3),
-                label: 'Clients',
-              ),
-              BottomNavigationBarItem(
-                icon: _buildNavIcon('assets/images/Menu.png', 4),
-                label: 'Menu',
-              ),
-            ],
-          ),
-        ),
-        Positioned(
-          left: MediaQuery.of(context).size.width / 2 - 30,
-          top: -15,
-          child: GestureDetector(
-            onTap: () {
-              Navigator.pushNamed(context, '/messages');
-            },
-            child: Column(
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/afterIconRemove.png',
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 60,
-                          height: 60,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF4ECDC4),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'ac',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Messages',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF4ECDC4),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNavIcon(String assetPath, int index) {
-    final isSelected = index == 3; // Current page is clients (index 3)
-    return SizedBox(
-      width: 24,
-      height: 24,
-      child: Image.asset(
-        assetPath,
-        width: 24,
-        height: 24,
-        color: isSelected ? const Color(0xFF4ECDC4) : Colors.grey[600],
-        errorBuilder: (context, error, stackTrace) {
-          return Icon(
-            _getDefaultIcon(index),
-            size: 24,
-            color: isSelected ? const Color(0xFF4ECDC4) : Colors.grey[600],
-          );
-        },
-      ),
-    );
-  }
-
-  IconData _getDefaultIcon(int index) {
-    switch (index) {
-      case 0:
-        return Icons.home;
-      case 1:
-        return Icons.confirmation_number;
-      case 3:
-        return Icons.people;
-      case 4:
-        return Icons.person;
-      default:
-        return Icons.circle;
-    }
-  }
-
   // Helper methods for ticket data formatting
   String _formatDate(DateTime date) {
     final now = DateTime.now();
@@ -1343,9 +1175,9 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     } else if (statusStr.contains('ouvert') || statusStr.contains('en cours')) {
       return 'assets/images/stickerOuvert.png'; // Ouvert/En cours
     } else if (statusStr.contains('rejeter') || statusStr.contains('fermé')) {
-      return 'assets/images/stickerRejeter.png'; // Rejeter/Fermé
+      return 'assets/images/StickerRejeter.png'; // Rejeter/Fermé
     } else if (statusStr.contains('résolu') || statusStr.contains('resolu')) {
-      return 'assets/images/stickerResolu.png'; // Résolu
+      return 'assets/images/StickerResolu.png'; // Résolu
     }
     return 'assets/images/stickernouveau.png'; // Default
   }
