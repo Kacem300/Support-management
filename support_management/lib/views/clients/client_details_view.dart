@@ -31,8 +31,6 @@ class ClientDetailsView extends StatefulWidget {
 class _ClientDetailsViewState extends State<ClientDetailsView> {
   bool _isInfoExpanded = true; // Initially expanded as shown in first image
   bool _isScrolled = false; // Track scroll state
-  final bool _hasReachedTopOnce =
-      false; // Track if user has reached top once in scroll mode
   final ScrollController _scrollController = ScrollController();
   ClientModel? _clientDetails;
 
@@ -53,8 +51,6 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     super.dispose();
   }
 
-  double _lastOffset = 0;
-
   void _onScroll() {
     double offset = _scrollController.offset;
 
@@ -71,8 +67,6 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
         _isScrolled = false;
       });
     } */
-
-    _lastOffset = offset;
   }
 
   Future<void> _loadClientDetails() async {
@@ -99,27 +93,91 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF6F6F6),
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(
-            color: Color(0xFFF5F5F5),
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black, size: 20),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        title: const Text(
-          'Détail client',
-          style: TextStyle(
-            color: Colors.black,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        automaticallyImplyLeading: !_isScrolled,
+        leading: !_isScrolled
+            ? Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFFFF),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0x1F000000),
+                      blurRadius: 20.1,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: Colors.black, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              )
+            : null,
+        title: _isScrolled
+            ? Row(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFFFFF),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0x1F000000),
+                          blurRadius: 20.1,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back,
+                          color: Colors.black, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: AssetImage(widget.avatar.isNotEmpty
+                        ? widget.avatar
+                        : 'assets/images/default_avatar.png'),
+                    backgroundColor: Colors.grey[300],
+                    child: widget.avatar.isEmpty
+                        ? Text(
+                            widget.clientName.substring(0, 1).toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.clientName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : const Text(
+                'Détail client',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
         centerTitle: false,
       ),
       body: Consumer<ClientController>(
@@ -151,7 +209,7 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                     // Header section with subtitle
                     Container(
                       width: double.infinity,
-                      color: Colors.white,
+                      color: const Color(0xFFF6F6F6),
                       padding: const EdgeInsets.fromLTRB(32, 0, 20, 24),
                       child: const Align(
                         alignment: Alignment.centerLeft,
@@ -167,7 +225,7 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                     ),
 
                     // Add top padding when scrolled to make space for sticky header
-                    if (_isScrolled) const SizedBox(height: 200),
+                    if (_isScrolled) const SizedBox(height: 120),
 
                     // Main content
                     Padding(
@@ -188,8 +246,8 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Add extra spacing when scrolled
-                              if (_isScrolled) const SizedBox(height: 24),
+                              // Reduce extra spacing when scrolled
+                              if (_isScrolled) const SizedBox(height: 8),
                               _buildRecentTicketsSection(),
                             ],
                           ),
@@ -207,43 +265,11 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                   left: 0,
                   right: 0,
                   child: Container(
-                    color: Colors.white,
-                    padding: const EdgeInsets.all(20),
+                    color: Color(0xFFF6F6F6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 12),
                     child: Column(
                       children: [
-                        // Client name only
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 20,
-                              backgroundImage: AssetImage(client.avatar ??
-                                  'assets/images/default_avatar.png'),
-                              backgroundColor: Colors.grey[300],
-                              child: (client.avatar?.isEmpty ?? true)
-                                  ? Text(
-                                      client.name.substring(0, 1).toUpperCase(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              client.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
                         // Divider
                         Divider(
                           color: Colors.grey[300],
@@ -251,18 +277,18 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                           height: 1,
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
 
                         // Horizontally scrollable tickets
                         SizedBox(
-                          height: 60,
+                          height: 82,
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 8),
                                 SizedBox(
-                                  width: 120,
+                                  width: 144,
                                   child: _buildCompactTicketStatCard(
                                     'Tickets résolu',
                                     client.ticketsResolved
@@ -270,12 +296,12 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                                         .padLeft(2, '0'),
                                     'assets/images/ticketresolu.png',
                                     const Color(0xFF27AE60),
-                                    const Color(0xFF27AE60).withOpacity(0.1),
+                                    const Color(0xFF27AE60).withOpacity(0.08),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 SizedBox(
-                                  width: 120,
+                                  width: 144,
                                   child: _buildCompactTicketStatCard(
                                     'Tickets rejeter',
                                     client.ticketsRejected
@@ -283,12 +309,12 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                                         .padLeft(2, '0'),
                                     'assets/images/ticketrejeter.png',
                                     const Color(0xFFE74C3C),
-                                    const Color(0xFFE74C3C).withOpacity(0.1),
+                                    const Color(0xFFE74C3C).withOpacity(0.08),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 SizedBox(
-                                  width: 120,
+                                  width: 144,
                                   child: _buildCompactTicketStatCard(
                                     'Nouveau tickets',
                                     client.ticketsNew
@@ -296,12 +322,12 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                                         .padLeft(2, '0'),
                                     'assets/images/ticketnouveau.png',
                                     const Color(0xFF3498DB),
-                                    const Color(0xFF3498DB).withOpacity(0.1),
+                                    const Color(0xFF3498DB).withOpacity(0.08),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                const SizedBox(width: 6),
                                 SizedBox(
-                                  width: 120,
+                                  width: 144,
                                   child: _buildCompactTicketStatCard(
                                     'Tickets en cours',
                                     client.ticketsInProgress
@@ -309,10 +335,10 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                                         .padLeft(2, '0'),
                                     'assets/images/ticketencour.png',
                                     const Color(0xFFF39C12),
-                                    const Color(0xFFF39C12).withOpacity(0.1),
+                                    const Color(0xFFF39C12).withOpacity(0.08),
                                   ),
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 8),
                               ],
                             ),
                           ),
@@ -322,21 +348,28 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
 
                         // Search bar
                         Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                          width: 342,
+                          height: 40,
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F5F5),
-                            borderRadius: BorderRadius.circular(12),
+                            color: const Color(0xFFFFFFFF),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.search,
-                                color: Colors.grey[400],
-                                size: 18,
+                              Image.asset(
+                                'assets/images/Search.png',
+                                width: 24,
+                                height: 24,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(
+                                    Icons.search,
+                                    color: Colors.grey[400],
+                                    size: 24,
+                                  );
+                                },
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Text(
                                   'Recherche dans les tickets...',
@@ -636,8 +669,8 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                 'Tickets résolu',
                 client.ticketsResolved.toString().padLeft(2, '0'),
                 Icons.check_circle_outline,
-                const Color(0xFFE64B32), // border
-                const Color(0x08E64B32), // background
+                const Color(0xFF27AE60), // green border (resolved)
+                Color(0xFF27AE60).withOpacity(0.08), // green background
               )),
               const SizedBox(width: 8),
               Expanded(
@@ -645,8 +678,8 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                 'Tickets rejeter',
                 client.ticketsRejected.toString().padLeft(2, '0'),
                 Icons.cancel_outlined,
-                const Color(0xFFE46C09), // border
-                const Color(0x12E46C09), // background
+                const Color(0xFFE74C3C), // red border (rejected)
+                Color(0xFFE74C3C).withOpacity(0.08), // red background
               )),
             ],
           ),
@@ -658,8 +691,8 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                 'Nouveau tickets',
                 client.ticketsNew.toString().padLeft(2, '0'),
                 Icons.fiber_new_outlined,
-                const Color(0xFF0DC634), // border
-                const Color(0x0F0DC634), // background
+                const Color(0xFF3498DB), // blue border (new)
+                Color(0xFF3498DB).withOpacity(0.08), // blue background
               )),
               const SizedBox(width: 8),
               Expanded(
@@ -667,8 +700,8 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
                 'Tickets en cours',
                 client.ticketsInProgress.toString().padLeft(2, '0'),
                 Icons.hourglass_bottom_outlined,
-                const Color(0xFF1443C3), // border
-                const Color(0x0F1D1DCE), // background
+                const Color(0xFFF39C12), // amber border (in progress)
+                Color(0xFFF39C12).withOpacity(0.08), // amber background
               )),
             ],
           ),
@@ -767,7 +800,7 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     Color borderColor,
     Color backgroundColor,
   ) {
-    // Choose the icon asset based on the title
+    // map title -> asset (keep fallback)
     String iconAsset;
     switch (title) {
       case 'Tickets résolu':
@@ -787,51 +820,67 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      // Keep flexible sizing (caller uses Expanded)
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(11.33),
         border: Border.all(color: borderColor, width: 0.81),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Image.asset(
-                iconAsset,
-                width: 20,
-                height: 20,
-                color: borderColor,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(icon, color: borderColor, size: 20);
-                },
-              ),
+          // Title
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+              fontSize: 11.33,
+              color: Color(0xFF595757),
+              height: 1.0,
             ),
           ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 6),
+          // Icon + count row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF6B7280),
-                ),
+              // icon asset (keep original colors in asset)
+              Image.asset(
+                iconAsset,
+                width: 28,
+                height: 28,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(icon, size: 28, color: borderColor);
+                },
               ),
-              Text(
-                count,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: borderColor,
+              const SizedBox(width: 12),
+              // Count text (flexible to avoid overflow)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    count,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      height: 32.37 / 15,
+                      color: Color(0xFF3A3F51),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -848,67 +897,73 @@ class _ClientDetailsViewState extends State<ClientDetailsView> {
     Color iconColor,
     Color backgroundColor,
   ) {
+    // Compact card that matches _buildTicketStatCard styles (fonts, colors, bg)
     return Container(
-      padding: const EdgeInsets.all(8),
+      height: 82,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: iconColor,
-          width: 1,
-        ),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(11.33),
+        border: Border.all(color: iconColor, width: 0.81),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Image.asset(
-                iconPath,
-                width: 12,
-                height: 12,
-                color: iconColor,
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(
-                    Icons.confirmation_number,
-                    size: 12,
-                    color: iconColor,
-                  );
-                },
-              ),
+          // Title
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+              fontSize: 11.33,
+              color: Color(0xFF595757),
+              height: 1.0,
             ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  count,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
+          const SizedBox(height: 6),
+          // Icon + count row
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // icon asset
+              Image.asset(
+                iconPath,
+                width: 28,
+                height: 28,
+                color: iconColor,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(Icons.confirmation_number,
+                      color: iconColor, size: 28);
+                },
+              ),
+              const SizedBox(width: 12),
+              // Count text (flexible to avoid overflow)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4.0),
+                  child: Text(
+                    count,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      color: Color(0xFF3A3F51),
+                    ),
                   ),
                 ),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w400,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

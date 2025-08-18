@@ -1,12 +1,11 @@
 import '../../models/models.dart';
-import '../../controllers/ticket_controller.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import '../tickets/audio_record_dialog.dart';
-import '../../controllers/auth_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/controllers.dart';
+import '../widgets/widgets.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -76,12 +75,14 @@ class _HomeViewState extends State<HomeView> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Top row with greeting and notification
-                    _buildHeaderSection(),
+                    const HomeHeader(),
 
                     const SizedBox(height: 20),
 
                     // Search bar and Add button in same row
-                    _buildSearchAndAddSection(),
+                    SearchAndAdd(
+                        controller: _searchController,
+                        onAdd: _showCreateTicketModal),
                   ],
                 ),
               ),
@@ -104,165 +105,8 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildHeaderSection() {
-    return Consumer<AuthController>(
-      builder: (context, authController, child) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bonjour',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  authController.user?.name ?? 'Kacem Ben Brahim',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: const Color.fromRGBO(255, 255, 255, 1),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color.fromRGBO(6, 6, 32, 0.08),
-                    offset: const Offset(0, 4),
-                    blurRadius: 40,
-                    spreadRadius: 0,
-                  ),
-                ],
-              ),
-              child: IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(context,
-                      '/notifications'); // Navigate to Notification page
-                },
-                icon: Image.asset(
-                  'assets/images/notificationBell.png',
-                  width: 24,
-                  height: 24,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.grey,
-                      size: 24,
-                    );
-                  },
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildSearchAndAddSection() {
-    return Row(
-      children: [
-        // Search bar
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Color(0xFFFFFFFF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: TextFormField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Recherche ticket',
-                hintStyle: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 16,
-                ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Image.asset(
-                    'assets/images/Search.png',
-                    width: 24,
-                    height: 24,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.search,
-                        color: Colors.grey[400],
-                        size: 20,
-                      );
-                    },
-                  ),
-                ),
-                suffixIcon: GestureDetector(
-                  onTap: () {
-                    // Navigate to filter page
-                    Navigator.pushNamed(context, '/home/filter');
-                  },
-                  child: Icon(
-                    Icons.tune,
-                    color: Colors.grey[400],
-                    size: 20,
-                  ),
-                ),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-              onChanged: (value) {
-                // Handle search query changes
-                print('Search query: $value');
-              },
-              onFieldSubmitted: (value) {
-                // Handle search submission
-                print('Search submitted: $value');
-              },
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 16),
-
-        // Add ticket button
-        GestureDetector(
-          onTap: () {
-            _showCreateTicketModal();
-          },
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius:
-                  BorderRadius.circular(12), // <-- changed to 12px radius
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.add,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   void _showCreateTicketModal() {
-    String? _selectedCreationOption;
+    String? selectedCreationOption;
 
     showModalBottomSheet(
       context: context,
@@ -325,7 +169,7 @@ class _HomeViewState extends State<HomeView> {
                   GestureDetector(
                     onTap: () {
                       setModalState(() {
-                        _selectedCreationOption = 'creation_simple';
+                        selectedCreationOption = 'creation_simple';
                       });
                       Future.delayed(const Duration(milliseconds: 10), () {
                         Navigator.of(ctx).pop();
@@ -336,10 +180,10 @@ class _HomeViewState extends State<HomeView> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: _selectedCreationOption == 'creation_simple'
+                        color: selectedCreationOption == 'creation_simple'
                             ? const Color(0xFF14B8A6).withOpacity(0.1)
                             : Colors.grey[50],
-                        border: _selectedCreationOption == 'creation_simple'
+                        border: selectedCreationOption == 'creation_simple'
                             ? Border.all(
                                 color: const Color(0xFF14B8A6),
                                 width: 2,
@@ -366,7 +210,7 @@ class _HomeViewState extends State<HomeView> {
                   GestureDetector(
                     onTap: () async {
                       setModalState(() {
-                        _selectedCreationOption = 'record_audio';
+                        selectedCreationOption = 'record_audio';
                       });
                       final status = await Permission.microphone.request();
                       if (!status.isGranted) {
@@ -404,10 +248,10 @@ class _HomeViewState extends State<HomeView> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: _selectedCreationOption == 'record_audio'
+                        color: selectedCreationOption == 'record_audio'
                             ? const Color(0xFF14B8A6).withOpacity(0.1)
                             : Colors.grey[50],
-                        border: _selectedCreationOption == 'record_audio'
+                        border: selectedCreationOption == 'record_audio'
                             ? Border.all(
                                 color: const Color(0xFF14B8A6),
                                 width: 2,
@@ -431,7 +275,7 @@ class _HomeViewState extends State<HomeView> {
                   GestureDetector(
                     onTap: () async {
                       setModalState(() {
-                        _selectedCreationOption = 'record_video';
+                        selectedCreationOption = 'record_video';
                       });
                       final ImagePicker picker = ImagePicker();
                       final XFile? pickedFile =
@@ -451,10 +295,10 @@ class _HomeViewState extends State<HomeView> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: _selectedCreationOption == 'record_video'
+                        color: selectedCreationOption == 'record_video'
                             ? const Color(0xFF14B8A6).withOpacity(0.1)
                             : Colors.grey[50],
-                        border: _selectedCreationOption == 'record_video'
+                        border: selectedCreationOption == 'record_video'
                             ? Border.all(
                                 color: const Color(0xFF14B8A6),
                                 width: 2,
@@ -518,9 +362,6 @@ class _HomeViewState extends State<HomeView> {
           );
         }
 
-        // Use GridView.builder with SliverGridDelegateWithMaxCrossAxisExtent
-        // so we can enforce a max cross-axis extent and a fixed mainAxisExtent
-        // (width/height) for each status card regardless of screen width.
         final statusItems = [
           {
             'title': 'Tickets résolu',
@@ -618,9 +459,9 @@ class _HomeViewState extends State<HomeView> {
               title,
               style: const TextStyle(
                 fontFamily: 'Poppins',
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600, // 600 = SemiBold in Poppins
                 fontStyle: FontStyle.normal,
-                fontSize: 11.33,
+                fontSize: 13,
                 height: 1.0, // 100% line-height
                 letterSpacing: 0,
                 color: Color(0xFF595757),

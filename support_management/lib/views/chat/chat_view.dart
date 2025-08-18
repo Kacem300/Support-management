@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'chat_details_view.dart';
+import '../widgets/search_add.dart';
 
 class ChatView extends StatefulWidget {
   const ChatView({super.key});
@@ -124,7 +125,7 @@ class _ChatViewState extends State<ChatView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -155,42 +156,15 @@ class _ChatViewState extends State<ChatView> {
         children: [
           // Search and Filter Section
           Container(
-            color: Colors.white,
+            color: const Color(0xFFF6F6F6),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             child: Column(
               children: [
-                // Search Bar
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.search,
-                        color: const Color(0xFF4ECDC4),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (value) => _filterChats(),
-                          decoration: const InputDecoration(
-                            hintText: 'Recherche',
-                            hintStyle: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(vertical: 14),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                // Use shared SearchAndAdd widget
+                SearchAndAdd(
+                  controller: _searchController,
+                  showAdd: false,
+                  showFilter: false,
                 ),
 
                 const SizedBox(height: 18),
@@ -264,15 +238,23 @@ class _ChatViewState extends State<ChatView> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black : Colors.transparent,
+          color: isSelected ? const Color(0xFF2D3134) : Colors.transparent,
           borderRadius: BorderRadius.circular(40),
+          border: isSelected
+              ? null
+              : Border.all(
+                  color: const Color(0xFFEEEEEE),
+                  width: 1,
+                ),
         ),
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[600],
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontFamily: 'Poppins',
+            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            color:
+                isSelected ? const Color(0xFFFFFFFF) : const Color(0xFFA39C9C),
           ),
         ),
       ),
@@ -349,16 +331,19 @@ class _ChatViewState extends State<ChatView> {
                       Text(
                         chat.name,
                         style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 17.31,
                           color: Colors.black,
                         ),
                       ),
                       Text(
                         chat.time,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 13.46,
+                          color: Color(0xFFC5BDBD),
                         ),
                       ),
                     ],
@@ -366,9 +351,11 @@ class _ChatViewState extends State<ChatView> {
                   const SizedBox(height: 4),
                   Text(
                     chat.lastMessage,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 15.38,
+                      color: Color(0xFF9C9797),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

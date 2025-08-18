@@ -33,7 +33,7 @@ class _ClientsViewState extends State<ClientsView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF6F6F6),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -53,7 +53,8 @@ class _ClientsViewState extends State<ClientsView> {
           if (clientController.isLoading) {
             return const Center(
               child: CircularProgressIndicator(
-                color: Color(0xFF4ECDC4),
+                /* color: Color(0xFF4ECDC4) */
+                color: Color(0xFFF6F6F6),
               ),
             );
           }
@@ -113,10 +114,10 @@ class _ClientsViewState extends State<ClientsView> {
                       child: Container(
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
+                          color: const Color(0xFFF6F6F6),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFFE9ECEF),
+                            color: const Color(0xFFF6F6F6),
                             width: 1,
                           ),
                         ),

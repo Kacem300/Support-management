@@ -1,37 +1,44 @@
-class ClientModel {
-  final String id;
-  final String name;
-  final String email;
-  final String? phoneNumber;
+import 'user_model.dart';
+
+class ClientModel extends UserModel {
   final String? company;
-  final String? avatar;
   final String? website;
   final String? address;
-  final DateTime joinDate;
-  final bool isActive;
+  final DateTime
+      joinDate; // keep original field name to preserve external shape
   final int ticketsInProgress;
   final int ticketsResolved;
   final int ticketsNew;
   final int ticketsRejected;
 
   ClientModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    this.phoneNumber,
+    required String id,
+    required String name,
+    required String email,
+    String? phoneNumber,
     this.company,
-    this.avatar,
+    String? avatar,
     this.website,
     this.address,
     required this.joinDate,
-    this.isActive = true,
+    bool isActive = true,
     this.ticketsInProgress = 0,
     this.ticketsResolved = 0,
     this.ticketsNew = 0,
     this.ticketsRejected = 0,
-  });
+  }) : super(
+          id: id,
+          email: email,
+          name: name,
+          avatar: avatar,
+          phoneNumber: phoneNumber,
+          createdAt: joinDate,
+          isActive: isActive,
+        );
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {
+    final joinDate =
+        DateTime.tryParse(json['joinDate'] ?? '') ?? DateTime.now();
     return ClientModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -41,7 +48,7 @@ class ClientModel {
       avatar: json['avatar'],
       website: json['website'],
       address: json['address'],
-      joinDate: DateTime.tryParse(json['joinDate'] ?? '') ?? DateTime.now(),
+      joinDate: joinDate,
       isActive: json['isActive'] ?? true,
       ticketsInProgress: json['ticketsInProgress'] ?? 0,
       ticketsResolved: json['ticketsResolved'] ?? 0,
@@ -50,41 +57,44 @@ class ClientModel {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'phoneNumber': phoneNumber,
+    final map = super.toJson();
+    // Keep original ClientModel JSON shape by including joinDate and client-specific fields
+    map.addAll({
       'company': company,
-      'avatar': avatar,
       'website': website,
       'address': address,
       'joinDate': joinDate.toIso8601String(),
-      'isActive': isActive,
       'ticketsInProgress': ticketsInProgress,
       'ticketsResolved': ticketsResolved,
       'ticketsNew': ticketsNew,
       'ticketsRejected': ticketsRejected,
-    };
+    });
+    return map;
   }
 
+  @override
   ClientModel copyWith({
     String? id,
-    String? name,
     String? email,
-    String? phoneNumber,
-    String? company,
+    String? name,
     String? avatar,
+    String? phoneNumber,
+    DateTime? createdAt,
+    bool? isActive,
+    // client-specific
+    String? company,
     String? website,
     String? address,
     DateTime? joinDate,
-    bool? isActive,
     int? ticketsInProgress,
     int? ticketsResolved,
     int? ticketsNew,
     int? ticketsRejected,
   }) {
+    // prefer explicit joinDate, fallback to createdAt for compatibility
+    final newJoinDate = joinDate ?? createdAt ?? this.joinDate;
     return ClientModel(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -94,7 +104,7 @@ class ClientModel {
       avatar: avatar ?? this.avatar,
       website: website ?? this.website,
       address: address ?? this.address,
-      joinDate: joinDate ?? this.joinDate,
+      joinDate: newJoinDate,
       isActive: isActive ?? this.isActive,
       ticketsInProgress: ticketsInProgress ?? this.ticketsInProgress,
       ticketsResolved: ticketsResolved ?? this.ticketsResolved,

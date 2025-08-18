@@ -66,7 +66,7 @@ class NotificationsSettingsView extends StatelessWidget {
 }
 
 class _NotificationSettingItem extends StatefulWidget {
-  const _NotificationSettingItem({super.key});
+  const _NotificationSettingItem();
 
   @override
   State<_NotificationSettingItem> createState() =>

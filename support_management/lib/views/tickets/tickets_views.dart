@@ -1,10 +1,7 @@
-import 'package:permission_handler/permission_handler.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/controllers.dart';
 import '../../models/models.dart';
-import 'audio_record_dialog.dart';
 
 class TicketsView extends StatefulWidget {
   const TicketsView({super.key});
@@ -15,14 +12,20 @@ class TicketsView extends StatefulWidget {
 
 class _TicketsViewState extends State<TicketsView> {
   final TextEditingController _searchController = TextEditingController();
-  String? _selectedCreationOption;
 
   @override
   void initState() {
     super.initState();
-    // Load tickets when the view is initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<TicketController>(context, listen: false).loadTickets();
+      final ticketController =
+          Provider.of<TicketController>(context, listen: false);
+      // Ensure we show unfiltered tickets when opening the Tickets page.
+      // Clear any filters/search that may have been applied from Home.
+      ticketController.clearFilters();
+      // Clear the search input UI as well so it matches controller state.
+      _searchController.clear();
+
+      if (ticketController.allTickets.isEmpty) ticketController.loadTickets();
     });
   }
 
@@ -32,475 +35,143 @@ class _TicketsViewState extends State<TicketsView> {
     super.dispose();
   }
 
-  void _showCreateTicketModal() {
-    setState(() {
-      _selectedCreationOption = null;
-    });
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            return Container(
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Container(
+        color: const Color(0xFFF6F6F6),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
                 ),
               ),
-              padding: const EdgeInsets.all(24),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header with close button
+                  const Text(
+                    'Tickets',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Gérer et suivez tous les tickets de support client',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Search + Add
                   Row(
                     children: [
-                      Image.asset(
-                        'assets/images/ticketresolu.png',
-                        width: 24,
-                        height: 24,
-                        color: const Color(0xFF14B8A6),
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.confirmation_number,
-                            size: 24,
-                            color: Color(0xFF14B8A6),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Création ticket',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
+                      Expanded(
+                        child: Container(
+                          height: 44,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF7F7F7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.search, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: _searchController,
+                                  decoration: const InputDecoration(
+                                    hintText: 'Rechercher',
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                  onChanged: (v) =>
+                                      Provider.of<TicketController>(context,
+                                              listen: false)
+                                          .searchTickets(v),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  // open filter sheet if available
+                                  Navigator.of(context).pushNamed('/filters');
+                                },
+                                icon:
+                                    const Icon(Icons.tune, color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 2),
                       GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const Icon(
-                          Icons.close,
-                          size: 24,
-                          color: Colors.black,
+                        onTap: () => Navigator.of(context)
+                            .pushNamed('/main/tickets/create'),
+                        child: Container(
+                          height: 44,
+                          // reduced horizontal padding to make the button narrower
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: const [
+                              Icon(Icons.add, color: Colors.white, size: 18),
+                              SizedBox(width: 2),
+                              Text(
+                                'Nouveau',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Création simple
-                  GestureDetector(
-                    onTap: () {
-                      setModalState(() {
-                        _selectedCreationOption = 'creation_simple';
-                      });
-                      Future.delayed(const Duration(milliseconds: 10), () {
-                        Navigator.of(context).pop();
-                        Navigator.pushNamed(context, '/main/tickets/create');
-                      });
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _selectedCreationOption == 'creation_simple'
-                            ? const Color(0xFF14B8A6).withOpacity(0.1)
-                            : Colors.grey[50],
-                        border: _selectedCreationOption == 'creation_simple'
-                            ? Border.all(
-                                color: const Color(0xFF14B8A6),
-                                width: 2,
-                              )
-                            : null,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit,
-                            size: 24,
-                            color: _selectedCreationOption == 'creation_simple'
-                                ? const Color(0xFF14B8A6)
-                                : Colors.black,
-                          ),
-                          const SizedBox(width: 16),
-                          const Text(
-                            'Création simple',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Record Audio option
-                  GestureDetector(
-                    onTap: () async {
-                      setModalState(() {
-                        _selectedCreationOption = 'record_audio';
-                      });
-                      final status = await Permission.microphone.request();
-                      if (!status.isGranted) {
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Permission micro refusée.')),
-                        );
-                        return;
-                      }
-                      String? audioPath;
-                      await showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) {
-                          return AudioRecordDialog(
-                            onRecordingComplete: (String? path) {
-                              audioPath = path;
-                            },
-                          );
-                        },
-                      );
-                      Navigator.of(context).pop();
-                      if (audioPath != null && audioPath!.isNotEmpty) {
-                        Navigator.pushNamed(
-                          context,
-                          '/main/tickets/create/continue',
-                          arguments: {
-                            'audioPath': audioPath,
-                          },
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _selectedCreationOption == 'record_audio'
-                            ? const Color(0xFF14B8A6).withOpacity(0.1)
-                            : Colors.grey[50],
-                        border: _selectedCreationOption == 'record_audio'
-                            ? Border.all(
-                                color: const Color(0xFF14B8A6),
-                                width: 2,
-                              )
-                            : null,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.mic,
-                            size: 24,
-                            color: _selectedCreationOption == 'record_audio'
-                                ? const Color(0xFF14B8A6)
-                                : Colors.black,
-                          ),
-                          const SizedBox(width: 16),
-                          const Text(
-                            'Record Audio',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Record Video option
-                  GestureDetector(
-                    onTap: () async {
-                      setModalState(() {
-                        _selectedCreationOption = 'record_video';
-                      });
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? pickedFile =
-                          await picker.pickVideo(source: ImageSource.camera);
-                      Navigator.of(context).pop();
-                      if (pickedFile != null) {
-                        Navigator.pushNamed(
-                          context,
-                          '/main/tickets/create/continue',
-                          arguments: {
-                            'videoPath': pickedFile.path,
-                          },
-                        );
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _selectedCreationOption == 'record_video'
-                            ? const Color(0xFF14B8A6).withOpacity(0.1)
-                            : Colors.grey[50],
-                        border: _selectedCreationOption == 'record_video'
-                            ? Border.all(
-                                color: const Color(0xFF14B8A6),
-                                width: 2,
-                              )
-                            : null,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.videocam,
-                            size: 24,
-                            color: _selectedCreationOption == 'record_video'
-                                ? const Color(0xFF14B8A6)
-                                : Colors.black,
-                          ),
-                          const SizedBox(width: 16),
-                          const Text(
-                            'Record vidéo',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
                 ],
               ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Header Section
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              const Text(
-                'Tickets',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Gérer et suivez tous les tickets de support client',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
-              ),
-              const SizedBox(height: 20),
 
-              // Search bar and Filter button
-              Row(
-                children: [
-                  // Search bar
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TextFormField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Recherche un ticket, client ou ID',
-                          hintStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 16,
-                          ),
-                          prefixIcon: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Image.asset(
-                              'assets/images/Search.png',
-                              width: 20,
-                              height: 20,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.search,
-                                  color: Colors.grey[400],
-                                  size: 20,
-                                );
-                              },
-                            ),
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        onChanged: (value) {
-                          // Handle search query changes
-                          print('Search query: $value');
-                        },
-                        onFieldSubmitted: (value) {
-                          // Handle search submission
-                          print('Search submitted: $value');
-                        },
-                      ),
-                    ),
-                  ),
+            const SizedBox(height: 20),
 
-                  const SizedBox(width: 16),
+            // Tickets list
+            Expanded(
+              child: Consumer<TicketController>(
+                builder: (context, ticketController, child) {
+                  if (ticketController.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                  // Filter button
-                  GestureDetector(
-                    onTap: () {
-                      // Navigate to tickets filter page
-                      Navigator.pushNamed(context, '/main/tickets/filter');
+                  final tickets = ticketController.tickets;
+                  if (tickets.isEmpty) return _buildEmptyState();
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: tickets.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final t = tickets[index];
+                      return _buildTicketCard(t);
                     },
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.tune,
-                        color: Colors.grey[600],
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Add ticket button
-        GestureDetector(
-          onTap: () {
-            _showCreateTicketModal();
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            width: double.infinity,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.add,
-                  color: Colors.white,
-                  size: 24,
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Ajouter un nouveau ticket',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 20),
-
-        // Tickets List
-        Expanded(
-          child: Consumer<TicketController>(
-            builder: (context, ticketController, child) {
-              if (ticketController.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF4ECDC4)),
-                );
-              }
-
-              if (ticketController.tickets.isEmpty) {
-                return _buildEmptyState();
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: ticketController.tickets.length,
-                itemBuilder: (context, index) {
-                  final ticket = ticketController.tickets[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: _buildTicketItem(
-                      title: ticket.title,
-                      ticketId: 'Ticket# ${ticket.id}',
-                      date:
-                          '${ticket.createdAt.day}.${ticket.createdAt.month.toString().padLeft(2, '0')}.${ticket.createdAt.year}',
-                      time:
-                          '${ticket.createdAt.hour}:${ticket.createdAt.minute.toString().padLeft(2, '0')}',
-                      status: ticket.status,
-                      priority: _getPriorityDisplay(ticket.priority),
-                      description: ticket.description.length > 100
-                          ? '${ticket.description.substring(0, 100)}...'
-                          : ticket.description,
-                      statusIcon: _statusIconFromEnum(ticket.status),
-                    ),
                   );
                 },
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -536,182 +207,149 @@ class _TicketsViewState extends State<TicketsView> {
     );
   }
 
-  Widget _buildTicketItem({
-    required String title,
-    required String ticketId,
-    required String date,
-    required String time,
-    required TicketStatus status,
-    required String priority,
-    required String description,
-    String? statusIcon,
-  }) {
+  Widget _buildTicketCard(TicketModel t) {
+    final statusColor = _statusColorFromEnum(t.status);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row with title and status
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // compact left spacing (no large sticker)
+              const SizedBox(width: 8),
+              const SizedBox(width: 4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      t.title,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.black,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      ticketId,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      'Ticket# ${t.id}',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF707070)),
                     ),
                   ],
                 ),
               ),
-              // Status pill
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F6F6),
+                  color: statusColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade200),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (statusIcon != null)
-                      Image.asset(
-                        statusIcon,
-                        width: 19,
-                        height: 19,
-                        color: _statusColorFromEnum(status),
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: Image.asset(
+                        _statusIconFromEnum(t.status),
+                        fit: BoxFit.contain,
+                        // Tint the asset to match the status color. This works well for monochrome/png assets.
+                        color: statusColor,
                         colorBlendMode: BlendMode.srcIn,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.circle,
-                            size: 8,
-                            color: _statusColorFromEnum(status),
-                          );
-                        },
-                      )
-                    else
-                      Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: _statusColorFromEnum(status),
+                        errorBuilder: (c, e, s) => Icon(
+                          Icons.circle,
+                          size: 10,
+                          color: statusColor,
+                        ),
                       ),
-                    const SizedBox(width: 6),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
-                      _statusLabelFromEnum(status),
+                      _statusLabelFromEnum(t.status),
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _statusColorFromEnum(status),
-                      ),
+                          color: statusColor, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Date, time, and priority row
           Row(
             children: [
-              // Date/Time in gray box
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F6F6),
+                  color: const Color(0xFFF7F7F7),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
-                    const SizedBox(width: 4),
+                    const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
                     Text(
-                      '$date / $time',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
+                        '${_formatDate(t.createdAt)} / ${_formatTime(t.createdAt)}',
+                        style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
-              // Priority in gray box
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F6F6),
+                  color: const Color(0xFFF7F7F7),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      _getPriorityIcon(priority),
+                      _getPriorityIcon(_getPriorityDisplay(t.priority.name)),
                       width: 16,
                       height: 16,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Icon(
-                          Icons.flag,
-                          size: 16,
-                          color: const Color(0xFF707070),
-                        );
-                      },
+                      errorBuilder: (c, e, s) =>
+                          const Icon(Icons.flag, size: 16),
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      priority,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF707070),
-                      ),
-                    ),
+                    const SizedBox(width: 8),
+                    Text(_getPriorityDisplay(t.priority.name),
+                        style: const TextStyle(fontSize: 12)),
                   ],
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Description
           Text(
-            description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
-              height: 1.4,
-            ),
+            t.description,
+            style:
+                TextStyle(fontSize: 14, color: Colors.grey[700], height: 1.4),
           ),
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime dt) {
+    return '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}.${dt.year}';
+  }
+
+  String _formatTime(DateTime dt) {
+    return '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
   // Map TicketStatus enum to display label
@@ -724,7 +362,7 @@ class _TicketsViewState extends State<TicketsView> {
       case TicketStatus.resolved:
         return 'Résolu';
       case TicketStatus.closed:
-        return 'Fermé';
+        return 'Rejeter';
     }
   }
 
@@ -743,11 +381,11 @@ class _TicketsViewState extends State<TicketsView> {
       case TicketStatus.open:
         return 'assets/images/stickernouveau.png';
       case TicketStatus.inProgress:
-        return 'assets/images/stickerOuvert.png';
+        return 'assets/images/stickerEncour.png';
       case TicketStatus.resolved:
-        return 'assets/images/stickerResolu.png';
+        return 'assets/images/StickerResolu.png';
       case TicketStatus.closed:
-        return 'assets/images/stickerRejeter.png';
+        return 'assets/images/StickerRejeter.png';
     }
   }
 

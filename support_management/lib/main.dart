@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:support_management/views/home/notifications_home_view.dart';
 import 'controllers/controllers.dart';
 import 'constants/constants.dart';
 
-// Views - New MVC Structure
 import 'views/splash/splash_view.dart';
 import 'views/onboarding/onboarding_view.dart';
 import 'views/auth/auth_views.dart';
@@ -15,14 +15,12 @@ import 'views/tickets/create_ticket_view.dart';
 import 'views/tickets/create_ticket_continue_view.dart';
 import 'views/clients/clients_views.dart';
 import 'views/clients/client_filter_view.dart';
-import 'views/common/common_views.dart' hide ChatView, FilterView;
+
 import 'views/main/main_navigation_view.dart';
 import 'views/chat/chat_view.dart';
 import 'views/audio/audio_recording_view.dart';
 import 'views/menu/notifications_settings_view.dart';
 
-// Legacy screens for backward compatibility
-import 'views/legacy/legacy_screens.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,11 +45,11 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
           useMaterial3: true,
-          fontFamily: 'Poppins', // Change to your desired font
+          fontFamily: 'Poppins', 
         ),
-        home: const SplashView(), // Start with splash screen
+        home: const SplashView(), 
         routes: {
-          // Core navigation - New MVC Views
+         
           '/splash': (context) => const SplashView(),
           '/onboarding': (context) => const OnboardingView(),
           '/login': (context) => const LoginView(), // Using new MVC view
@@ -82,7 +80,7 @@ class MyApp extends StatelessWidget {
           // Direct page routes - New MVC Views
           '/tickets': (context) => const TicketsView(),
           '/clients': (context) => const ClientsView(),
-          '/menu': (context) => const MenuView(),
+          /*  '/menu': (context) => const MenuView(), */
           /*   '/main/clients/details': (context) => const ClientDetailsView(),*/
 
           '/tickets/create': (context) => const CreateTicketView(),
@@ -110,15 +108,11 @@ class MyApp extends StatelessWidget {
           '/main/tickets/filter': (context) => const tickets_filter
               .TicketsFilterView(), // Updated to MVC TicketsFilterView
 
-          // Legacy compatibility routes (these will show migration placeholders)
-          '/splash-legacy': (context) => const SplashScreen(),
-          '/onboarding-legacy': (context) => const OnboardingScreen(),
-          '/signup-legacy': (context) => const SignupScreen(),
-          '/enter-otp-legacy': (context) => const EnterOtpScreen(),
-          '/reset-password-legacy': (context) => const ResetPasswordScreen(),
+         
 
           // Notification route
           '/notifications': (context) => const NotificationsSettingsView(),
+          '/home/notifications': (context) => const NotificationsHomeView(),
         },
         onGenerateRoute: (settings) {
           // Remove the client details route handling - let it be handled by normal navigation
