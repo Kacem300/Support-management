@@ -8,13 +8,13 @@ class SearchAndAdd extends StatelessWidget {
   final bool showFilter;
 
   const SearchAndAdd({
-    Key? key,
+    super.key,
     required this.controller,
     this.onAdd,
     this.showAdd = true,
     this.onFilter,
     this.showFilter = true,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

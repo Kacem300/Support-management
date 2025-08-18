@@ -12,28 +12,22 @@ class ClientModel extends UserModel {
   final int ticketsRejected;
 
   ClientModel({
-    required String id,
-    required String name,
-    required String email,
-    String? phoneNumber,
+    required super.id,
+    required super.name,
+    required super.email,
+    super.phoneNumber,
     this.company,
-    String? avatar,
+    super.avatar,
     this.website,
     this.address,
     required this.joinDate,
-    bool isActive = true,
+    super.isActive,
     this.ticketsInProgress = 0,
     this.ticketsResolved = 0,
     this.ticketsNew = 0,
     this.ticketsRejected = 0,
   }) : super(
-          id: id,
-          email: email,
-          name: name,
-          avatar: avatar,
-          phoneNumber: phoneNumber,
           createdAt: joinDate,
-          isActive: isActive,
         );
 
   factory ClientModel.fromJson(Map<String, dynamic> json) {

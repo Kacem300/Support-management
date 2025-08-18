@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../controllers/controllers.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({Key? key}) : super(key: key);
+  const HomeHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
